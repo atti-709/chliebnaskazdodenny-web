@@ -32,7 +32,7 @@ export const getDevotionalByDate = async (dateString: string) => {
     params: {
       query: {
         'filters[date][$eq]': dateString,
-      },
+      } as any,
     },
   })
 
@@ -53,7 +53,7 @@ export const getAllDevotionals = async (limit = 100) => {
       query: {
         'pagination[limit]': limit,
         sort: 'date:desc',
-      },
+      } as any,
     },
   })
 
