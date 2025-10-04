@@ -5,7 +5,7 @@
  */
 
 import createClient from 'openapi-fetch'
-import type { paths } from './strapi-schema'
+import type { paths, components } from './strapi-schema'
 
 const STRAPI_API_URL = import.meta.env.VITE_STRAPI_API_URL || 'http://localhost:1337/api'
 const STRAPI_API_TOKEN = import.meta.env.VITE_STRAPI_API_TOKEN
@@ -20,101 +20,55 @@ export const api = createClient<paths>({
     : {},
 })
 
-/**
- * Helper type for devotional data
- */
-export interface DevotionalData {
-  id: number
-  date: string
-  title: string
-  scripture: string
-  text: any[] // Rich text blocks
-  spotifyEmbedUri: string
-}
+// Export generated types
+export type Devotional = components['schemas']['DevotionalResponse']
+export type DevotionalListResponse = components['schemas']['DevotionalListResponse']
 
 /**
  * Fetches a devotional by date from Strapi
  */
-export const getDevotionalByDate = async (dateString: string): Promise<DevotionalData | null> => {
-  try {
-    const { data, error } = await api.GET('/devotionals', {
-      params: {
-        query: {
-          'filters[date][$eq]': dateString,
-        },
+export const getDevotionalByDate = async (dateString: string) => {
+  const { data, error } = await api.GET('/devotionals', {
+    params: {
+      query: {
+        'filters[date][$eq]': dateString,
       },
-    })
+    },
+  })
 
-    if (error) {
-      console.error('Strapi API error:', error)
-      return null
-    }
-
-    if (data?.data && data.data.length > 0) {
-      const devotional = data.data[0] as any
-      return {
-        id: devotional.id,
-        date: devotional.date,
-        title: devotional.title,
-        scripture: devotional.scripture,
-        text: devotional.text,
-        spotifyEmbedUri: devotional.spotifyEmbedUri,
-      }
-    }
-
+  if (error) {
+    console.error('Strapi API error:', error)
     return null
-  } catch (error) {
-    console.error('Error fetching devotional from Strapi:', error)
-    throw error
   }
+
+  return data?.data && data.data.length > 0 ? data.data[0] : null
 }
 
 /**
  * Fetches all devotionals from Strapi
  */
-export const getAllDevotionals = async (limit = 100): Promise<DevotionalData[]> => {
-  try {
-    const { data, error } = await api.GET('/devotionals', {
-      params: {
-        query: {
-          'pagination[limit]': limit,
-          sort: 'date:desc',
-        },
+export const getAllDevotionals = async (limit = 100) => {
+  const { data, error } = await api.GET('/devotionals', {
+    params: {
+      query: {
+        'pagination[limit]': limit,
+        sort: 'date:desc',
       },
-    })
+    },
+  })
 
-    if (error) {
-      console.error('Strapi API error:', error)
-      return []
-    }
-
-    if (data?.data) {
-      return data.data.map((item: any) => ({
-        id: item.id,
-        date: item.date,
-        title: item.title,
-        scripture: item.scripture,
-        text: item.text,
-        spotifyEmbedUri: item.spotifyEmbedUri,
-      }))
-    }
-
+  if (error) {
+    console.error('Strapi API error:', error)
     return []
-  } catch (error) {
-    console.error('Error fetching all devotionals from Strapi:', error)
-    throw error
   }
+
+  return data?.data ?? []
 }
 
 /**
  * Gets available devotional dates from Strapi
  */
 export const getAvailableDates = async (): Promise<string[]> => {
-  try {
-    const devotionals = await getAllDevotionals()
-    return devotionals.map(d => d.date.split('T')[0])
-  } catch (error) {
-    console.error('Error fetching available dates from Strapi:', error)
-    return []
-  }
+  const devotionals = await getAllDevotionals()
+  return devotionals.map(d => (d as any).date?.split('T')[0]).filter(Boolean)
 }

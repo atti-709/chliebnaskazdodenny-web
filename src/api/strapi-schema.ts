@@ -1454,7 +1454,7 @@ export interface components {
             data: {
                 title: string;
                 /** Format: date */
-                datee: string;
+                date: string;
                 scripture: string;
                 text?: unknown;
                 spotifyEmbedUri?: string;
@@ -1478,7 +1478,7 @@ export interface components {
             documentId?: string;
             title: string;
             /** Format: date */
-            datee: string;
+            date: string;
             scripture: string;
             text?: unknown;
             spotifyEmbedUri?: string;
@@ -1593,7 +1593,7 @@ export interface components {
                 documentId?: string;
                 title?: string;
                 /** Format: date */
-                datee?: string;
+                date?: string;
                 scripture?: string;
                 text?: unknown;
                 spotifyEmbedUri?: string;
