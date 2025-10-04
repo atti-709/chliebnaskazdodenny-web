@@ -16,7 +16,8 @@ A beautiful, minimalistic devotional web application for daily spiritual reading
 - **Frontend**: React 18 with Vite
 - **Styling**: Tailwind CSS
 - **Date Handling**: date-fns
-- **CMS**: Ready for integration with Contentful or Strapi
+- **CMS**: Strapi with blocks renderer
+- **Code Quality**: ESLint + Prettier
 
 ## Getting Started
 
@@ -26,9 +27,9 @@ A beautiful, minimalistic devotional web application for daily spiritual reading
 
 ### Installation
 
-1. Install dependencies:
+1. Install dependencies (use --ignore-scripts to avoid postinstall errors):
 ```bash
-npm install
+npm install --ignore-scripts
 ```
 
 2. Start the development server:
@@ -38,6 +39,17 @@ npm run dev
 
 3. Open your browser to `http://localhost:5173`
 
+### Available Commands
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
+npm run lint:fix # Auto-fix ESLint issues
+npm run format   # Format code with Prettier
+```
+
 ### Build for Production
 
 ```bash
@@ -46,9 +58,38 @@ npm run build
 
 The built files will be in the `dist` directory, ready for deployment.
 
-## CMS Integration
+## Strapi CMS Integration
 
-The application is structured to easily integrate with a headless CMS. The required content model is:
+The application is ready to integrate with Strapi headless CMS. Follow the detailed setup guide in [STRAPI_SETUP_GUIDE.md](./STRAPI_SETUP_GUIDE.md).
+
+### Quick Start
+
+1. **Set up Strapi** (see [STRAPI_SETUP_GUIDE.md](./STRAPI_SETUP_GUIDE.md))
+   - Use Strapi Cloud (easiest) or run locally
+   - Create the Devotional content type
+   - Add test content
+
+2. **Configure the app**:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+   
+   Edit `.env.local`:
+   ```env
+   VITE_STRAPI_API_URL=https://your-project-name.strapiapp.com/api
+   VITE_STRAPI_API_TOKEN=your_api_token_here
+   ```
+
+3. **Restart the dev server**:
+   ```bash
+   npm run dev
+   ```
+
+The app will now fetch devotionals from your Strapi CMS!
+
+### Content Model
+
+The required content model is:
 
 ### Devotional Episode Content Type
 
@@ -57,37 +98,16 @@ The application is structured to easily integrate with a headless CMS. The requi
 | date            | Date       | The day this devotional is published  | Yes      |
 | title           | Short Text | The title of the day's devotional     | Yes      |
 | scripture       | Short Text | The main scripture verse reference    | Yes      |
-| devotionalText  | Rich Text  | The full body text (HTML supported)   | Yes      |
+| text            | Rich Text  | The full body text (HTML supported)   | Yes      |
 | spotifyEmbedUri | URL        | The Spotify embed URL for the episode | Yes      |
 
-### Integration Steps
+### Authentication
 
-1. **Set up your CMS** (Contentful, Strapi, or similar)
-2. **Create the content model** with the fields above
-3. **Get your API credentials** (endpoint URL and API key)
-4. **Create a `.env` file** in the project root:
-```env
-VITE_CMS_API_URL=your_cms_api_url
-VITE_CMS_API_KEY=your_cms_api_key
-```
-5. **Update the `getDevotionalByDate` function** in `src/App.jsx` to fetch from your CMS
+The app uses Strapi API tokens for secure authentication:
 
-### Example CMS API Integration (Contentful)
-
-```javascript
-const getDevotionalByDate = async (dateString) => {
-  const response = await fetch(
-    `${import.meta.env.VITE_CMS_API_URL}/entries?content_type=devotional&fields.date=${dateString}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_CMS_API_KEY}`
-      }
-    }
-  )
-  const data = await response.json()
-  return data.items[0]?.fields || null
-}
-```
+- **API Token**: Created in Strapi admin panel (Settings → API Tokens)
+- **Read-only access**: Use "Read-only" token type for security
+- **No public exposure**: Token is only used server-side during build/fetch
 
 ## Deployment
 
