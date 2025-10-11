@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { addDays, subDays, parseISO, startOfDay, format, isValid, differenceInCalendarDays } from 'date-fns'
 
 /**
@@ -25,12 +25,16 @@ function getInitialDate() {
 /**
  * Update URL with current date
  */
-function updateURL(date) {
+function updateURL(date, replace = false) {
   const dateString = format(date, 'yyyy-MM-dd')
   const url = new URL(window.location)
   url.searchParams.set('date', dateString)
   url.hash = '' // Remove trailing hash
-  window.history.pushState({}, '', url)
+  if (replace) {
+    window.history.replaceState({}, '', url)
+  } else {
+    window.history.pushState({}, '', url)
+  }
 }
 
 /**
@@ -70,15 +74,31 @@ export function useDateNavigation() {
   const [currentDate, setCurrentDate] = useState(getInitialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [hasUserNavigated, setHasUserNavigated] = useState(false)
+  const isInitialMount = useRef(true)
+  const isPopState = useRef(false)
 
   // Update URL when date changes
   useEffect(() => {
-    updateURL(currentDate)
+    // Don't update URL if this change came from a popstate event
+    if (isPopState.current) {
+      isPopState.current = false
+      return
+    }
+
+    if (isInitialMount.current) {
+      // On initial mount, replace the URL instead of pushing
+      updateURL(currentDate, true)
+      isInitialMount.current = false
+    } else {
+      // On subsequent changes, push to history
+      updateURL(currentDate, false)
+    }
   }, [currentDate])
 
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
+      isPopState.current = true
       const date = getInitialDate()
       setCurrentDate(date)
     }
@@ -114,6 +134,8 @@ export function useDateNavigation() {
   const navigateToClosestDate = (availableDates) => {
     const closestDate = findClosestDate(currentDate, availableDates)
     if (closestDate && closestDate !== format(currentDate, 'yyyy-MM-dd')) {
+      // Treat auto-navigation like initial mount - use replaceState
+      isInitialMount.current = true
       const selectedDate = startOfDay(parseISO(closestDate))
       setCurrentDate(selectedDate)
       setShowDatePicker(false)
