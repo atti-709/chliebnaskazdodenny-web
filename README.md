@@ -37,8 +37,8 @@ npm install
 
 ```bash
 # Create .env.local file
-VITE_NOTION_API_KEY=your_notion_api_key_here
-VITE_NOTION_DATABASE_ID=your_notion_database_id_here
+NOTION_API_KEY=your_notion_api_key_here
+NOTION_DATABASE_ID=your_notion_database_id_here
 ```
 
 3. Start the development server:
@@ -84,8 +84,8 @@ The application uses Notion as a backend database. Follow the detailed setup gui
    Create `.env.local` file:
 
    ```env
-   VITE_NOTION_API_KEY=your_notion_api_key_here
-   VITE_NOTION_DATABASE_ID=your_notion_database_id_here
+   NOTION_API_KEY=your_notion_api_key_here
+   NOTION_DATABASE_ID=your_notion_database_id_here
    ```
 
 3. **Restart the dev server**:

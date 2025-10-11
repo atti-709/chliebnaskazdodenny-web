@@ -7,8 +7,8 @@ This guide will help you deploy the **Chlieb náš každodenný** application to
 Before deploying, ensure you have:
 
 1. ✅ A Notion integration set up (see [NOTION_SETUP.md](./NOTION_SETUP.md))
-2. ✅ Your Notion API key (`VITE_NOTION_API_KEY`)
-3. ✅ Your Notion database ID (`VITE_NOTION_DATABASE_ID`)
+2. ✅ Your Notion API key (`NOTION_API_KEY`)
+3. ✅ Your Notion database ID (`NOTION_DATABASE_ID`)
 4. ✅ A Git repository (GitHub, GitLab, or Bitbucket)
 5. ✅ Code pushed to your repository
 
@@ -49,7 +49,7 @@ This application is configured for both **Netlify** and **Vercel**. Choose the p
 2. Click **"Add a variable"** and add:
 
    ```
-   Key: VITE_NOTION_API_KEY
+   Key: NOTION_API_KEY
    Value: [Your Notion API Key]
    Scopes: ✅ Production, ✅ Deploy previews, ✅ Branch deploys
    ```
@@ -57,7 +57,7 @@ This application is configured for both **Netlify** and **Vercel**. Choose the p
 3. Click **"Add a variable"** again and add:
 
    ```
-   Key: VITE_NOTION_DATABASE_ID
+   Key: NOTION_DATABASE_ID
    Value: [Your Notion Database ID]
    Scopes: ✅ Production, ✅ Deploy previews, ✅ Branch deploys
    ```
@@ -98,7 +98,7 @@ This application is configured for both **Netlify** and **Vercel**. Choose the p
 1. Under **Environment Variables**, add:
 
    ```
-   Name: VITE_NOTION_API_KEY
+   Name: NOTION_API_KEY
    Value: [Your Notion API Key]
    Environment: ✅ Production, ✅ Preview, ✅ Development
    ```
@@ -106,7 +106,7 @@ This application is configured for both **Netlify** and **Vercel**. Choose the p
 2. Add another:
 
    ```
-   Name: VITE_NOTION_DATABASE_ID
+   Name: NOTION_DATABASE_ID
    Value: [Your Notion Database ID]
    Environment: ✅ Production, ✅ Preview, ✅ Development
    ```
@@ -167,8 +167,8 @@ npm run build
 ### API Calls Fail
 
 **Check:**
-- `VITE_NOTION_API_KEY` is correct
-- `VITE_NOTION_DATABASE_ID` is correct
+- `NOTION_API_KEY` is correct
+- `NOTION_DATABASE_ID` is correct
 - Notion integration has access to the database
 
 **Solution:**
@@ -201,10 +201,10 @@ npm run build
 
 ## Environment Variables Reference
 
-| Variable                  | Description              | Required | Example            |
-| ------------------------- | ------------------------ | -------- | ------------------ |
-| `VITE_NOTION_API_KEY`     | Notion Integration Token | ✅ Yes    | `secret_ABC123...` |
-| `VITE_NOTION_DATABASE_ID` | Notion Database ID       | ✅ Yes    | `a1b2c3d4e5f6...`  |
+| Variable             | Description              | Required | Example            |
+| -------------------- | ------------------------ | -------- | ------------------ |
+| `NOTION_API_KEY`     | Notion Integration Token | ✅ Yes    | `secret_ABC123...` |
+| `NOTION_DATABASE_ID` | Notion Database ID       | ✅ Yes    | `a1b2c3d4e5f6...`  |
 
 ---
 

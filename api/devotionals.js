@@ -105,8 +105,8 @@ export default async function handler(req, res) {
   }
 
   // Verify environment variables are set
-  const NOTION_API_KEY = process.env.VITE_NOTION_API_KEY
-  const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
+  const NOTION_API_KEY = process.env.NOTION_API_KEY
+  const DATABASE_ID = process.env.NOTION_DATABASE_ID
 
   if (!NOTION_API_KEY || !DATABASE_ID) {
     console.error('Missing required environment variables')

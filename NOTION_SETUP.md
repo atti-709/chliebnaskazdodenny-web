@@ -9,7 +9,7 @@ This application now uses Notion as the backend instead of Strapi. Follow these 
 3. Give it a name (e.g., "Chlieb náš každodenný")
 4. Select the workspace where your devotional database is located
 5. Click "Submit"
-6. Copy the "Internal Integration Token" - this is your `VITE_NOTION_API_KEY`
+6. Copy the "Internal Integration Token" - this is your `NOTION_API_KEY`
 
 ## 2. Create a Notion Database
 
@@ -45,8 +45,8 @@ Create a database in Notion with the following properties:
 Create a `.env.local` file in the project root with:
 
 ```
-VITE_NOTION_API_KEY=your_notion_api_key_here
-VITE_NOTION_DATABASE_ID=your_notion_database_id_here
+NOTION_API_KEY=your_notion_api_key_here
+NOTION_DATABASE_ID=your_notion_database_id_here
 ```
 
 **Important for Deployment:**

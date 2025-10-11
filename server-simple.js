@@ -11,8 +11,8 @@ import { convertNotionPageToDevotional } from './src/utils/notion.js'
 // Load environment variables
 dotenv.config({ path: '.env.local' })
 
-const NOTION_API_KEY = process.env.VITE_NOTION_API_KEY
-const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+const DATABASE_ID = process.env.NOTION_DATABASE_ID
 const NOTION_VERSION = '2022-06-28'
 
 /**

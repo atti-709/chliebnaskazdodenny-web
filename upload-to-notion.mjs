@@ -3,12 +3,12 @@ import dotenv from 'dotenv'
 
 dotenv.config({ path: '.env.local' })
 
-const NOTION_API_KEY = process.env.VITE_NOTION_API_KEY
-const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+const DATABASE_ID = process.env.NOTION_DATABASE_ID
 const NOTION_VERSION = '2022-06-28'
 
 if (!NOTION_API_KEY || !DATABASE_ID) {
-  console.error('Error: VITE_NOTION_API_KEY and VITE_NOTION_DATABASE_ID must be set in .env.local')
+  console.error('Error: NOTION_API_KEY and NOTION_DATABASE_ID must be set in .env.local')
   process.exit(1)
 }
 

@@ -6,8 +6,8 @@ This guide explains how to use the `upload-to-notion.mjs` script to import devot
 
 1. ✅ Notion integration set up (see `NOTION_SETUP.md`)
 2. ✅ Environment variables configured in `.env.local`:
-   - `VITE_NOTION_API_KEY`
-   - `VITE_NOTION_DATABASE_ID`
+   - `NOTION_API_KEY`
+   - `NOTION_DATABASE_ID`
 3. ✅ JSON file with parsed devotionals (e.g., `devotionals-2026-jan.json`)
 
 ## Basic Usage
@@ -197,12 +197,12 @@ node upload-to-notion.mjs devotionals-2026-jan.json --start 20
 
 ## Troubleshooting
 
-### Error: "VITE_NOTION_API_KEY not found"
+### Error: "NOTION_API_KEY not found"
 
 Make sure `.env.local` exists with:
 ```
-VITE_NOTION_API_KEY=your_key_here
-VITE_NOTION_DATABASE_ID=your_db_id_here
+NOTION_API_KEY=your_key_here
+NOTION_DATABASE_ID=your_db_id_here
 ```
 
 ### Error: "Invalid JSON"
