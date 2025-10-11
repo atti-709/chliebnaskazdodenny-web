@@ -3,7 +3,17 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
+  "functions": {
+    "api/devotionals.cjs": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api/devotionals",
+      "destination": "/api/devotionals.cjs"
+    },
     {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
