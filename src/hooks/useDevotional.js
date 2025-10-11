@@ -11,6 +11,13 @@ export function useDevotional(currentDate) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    // Don't fetch if no date provided (waiting for initial navigation)
+    if (!currentDate) {
+      setLoading(false)
+      setDevotional(null)
+      return
+    }
+
     const fetchDevotional = async () => {
       setLoading(true)
       setError(null)

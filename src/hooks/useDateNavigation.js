@@ -3,7 +3,6 @@ import { addDays, subDays, parseISO, startOfDay, format, isValid, differenceInCa
 
 /**
  * Get initial date from URL or use today
- * Returns { date, hasDateParam } where hasDateParam indicates if URL had a date parameter
  */
 function getInitialDate() {
   const params = new URLSearchParams(window.location.search)
@@ -13,14 +12,14 @@ function getInitialDate() {
     try {
       const parsedDate = parseISO(dateParam)
       if (isValid(parsedDate)) {
-        return { date: startOfDay(parsedDate), hasDateParam: true }
+        return startOfDay(parsedDate)
       }
     } catch (e) {
       // Invalid date in URL, fall back to today
     }
   }
   
-  return { date: startOfDay(new Date()), hasDateParam: false }
+  return startOfDay(new Date())
 }
 
 /**
@@ -68,10 +67,9 @@ export function findClosestDate(targetDate, availableDates) {
  */
 export function useDateNavigation() {
   const today = startOfDay(new Date())
-  const [initialState] = useState(getInitialDate)
-  const [currentDate, setCurrentDate] = useState(initialState.date)
+  const [currentDate, setCurrentDate] = useState(getInitialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
-  const [hasNavigatedToClosest, setHasNavigatedToClosest] = useState(initialState.hasDateParam)
+  const [hasUserNavigated, setHasUserNavigated] = useState(false)
 
   // Update URL when date changes
   useEffect(() => {
@@ -81,7 +79,7 @@ export function useDateNavigation() {
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      const { date } = getInitialDate()
+      const date = getInitialDate()
       setCurrentDate(date)
     }
 
@@ -92,18 +90,21 @@ export function useDateNavigation() {
   const handlePreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1))
     setShowDatePicker(false)
+    setHasUserNavigated(true)
   }
 
   const handleNextDay = () => {
     const nextDate = addDays(currentDate, 1)
     setCurrentDate(nextDate)
     setShowDatePicker(false)
+    setHasUserNavigated(true)
   }
 
   const handleDateSelect = dateString => {
     const selectedDate = startOfDay(parseISO(dateString))
     setCurrentDate(selectedDate)
     setShowDatePicker(false)
+    setHasUserNavigated(true)
   }
 
   const toggleDatePicker = () => {
@@ -111,10 +112,12 @@ export function useDateNavigation() {
   }
 
   const navigateToClosestDate = (availableDates) => {
-    const closestDate = findClosestDate(today, availableDates)
-    if (closestDate) {
-      handleDateSelect(closestDate)
-      setHasNavigatedToClosest(true)
+    const closestDate = findClosestDate(currentDate, availableDates)
+    if (closestDate && closestDate !== format(currentDate, 'yyyy-MM-dd')) {
+      const selectedDate = startOfDay(parseISO(closestDate))
+      setCurrentDate(selectedDate)
+      setShowDatePicker(false)
+      // Don't set hasUserNavigated for auto-navigation
     }
   }
 
@@ -126,7 +129,7 @@ export function useDateNavigation() {
     handleNextDay,
     handleDateSelect,
     toggleDatePicker,
-    hasNavigatedToClosest,
     navigateToClosestDate,
+    hasUserNavigated,
   }
 }

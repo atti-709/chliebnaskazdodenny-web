@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { isAfter, format, addDays, subDays } from 'date-fns'
 import { sk } from 'date-fns/locale'
 import { useDevotional } from './hooks/useDevotional'
@@ -19,21 +19,49 @@ function App() {
     handleNextDay,
     handleDateSelect,
     toggleDatePicker,
-    hasNavigatedToClosest,
     navigateToClosestDate,
+    hasUserNavigated,
   } = useDateNavigation()
 
-  const { devotional, loading } = useDevotional(currentDate)
   const { availableDates, loading: datesLoading } = useAvailableDates()
+  const hasCheckedInitialDate = useRef(false)
+  const [readyToFetchDevotional, setReadyToFetchDevotional] = useState(false)
+
+  // Check if we need to auto-navigate before fetching devotional
+  useEffect(() => {
+    // Wait for dates to load
+    if (datesLoading) return
+
+    // Only check once on initial load (not on manual navigation)
+    if (hasCheckedInitialDate.current || hasUserNavigated) {
+      setReadyToFetchDevotional(true)
+      return
+    }
+
+    // Mark as checked
+    hasCheckedInitialDate.current = true
+
+    // Check if current date has a devotional available
+    if (availableDates.size > 0) {
+      const currentDateStr = format(currentDate, 'yyyy-MM-dd')
+      if (!availableDates.has(currentDateStr)) {
+        // Navigate to closest date immediately (don't fetch yet)
+        navigateToClosestDate(availableDates)
+        // Wait for next render cycle after navigation
+        return
+      }
+    }
+
+    // Current date is valid or no dates available, safe to fetch
+    setReadyToFetchDevotional(true)
+  }, [datesLoading, availableDates, currentDate, navigateToClosestDate, hasUserNavigated])
+
+  // Fetch devotional only after initial date check is complete
+  const shouldFetch = readyToFetchDevotional || hasUserNavigated
+  const { devotional, loading: devotionalLoading } = useDevotional(shouldFetch ? currentDate : null)
+  const loading = devotionalLoading || !readyToFetchDevotional
 
   const isFutureDate = isAfter(currentDate, today)
-
-  // Navigate to closest available date if URL didn't have a date parameter
-  useEffect(() => {
-    if (!hasNavigatedToClosest && !datesLoading && availableDates.size > 0) {
-      navigateToClosestDate(availableDates)
-    }
-  }, [hasNavigatedToClosest, datesLoading, availableDates, navigateToClosestDate])
 
   // Check if there are available episodes on immediate next/previous day
   const { hasPreviousDate, hasNextDate } = useMemo(() => {
@@ -72,7 +100,7 @@ function App() {
       />
 
       <main className="max-w-3xl mx-auto px-4 py-8 md:py-12">
-        {loading ? (
+        {loading || datesLoading ? (
           <LoadingSpinner />
         ) : devotional ? (
           <DevotionalContent devotional={devotional} />
