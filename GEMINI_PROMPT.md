@@ -76,7 +76,10 @@ Parse ALL devotionals in the file and return a JSON array with this exact struct
   - Preserve formatting in `content` and `questions` by converting HTML to Markdown:
     - `<b>` or `<strong>` → `**text**`
     - `<i>` or `<em>` → `*text*`
-    - Keep quotes in quotation marks "like this"
+  - **IMPORTANT: Use smart quotes for quotations in text**:
+    - Use Slovak smart quotes: „ (opening) and " (closing) for quotations within text
+    - Example: „Dúfajte!" instead of "Dúfajte!"
+    - This prevents JSON parsing errors when quotes appear before markdown formatting
 - Combine content paragraphs with `\n\n` (double newline) between them
 - Do NOT include the quote text itself in content, only the main devotional paragraphs
 - The **quote** field should contain the FULL quote text including the Bible reference in parentheses WITHOUT a trailing period (e.g., `"... Na svete máte súženie, ale dúfajte, ja som premohol svet!" (Jn 16,33)` - no period at the end)
@@ -84,8 +87,22 @@ Parse ALL devotionals in the file and return a JSON array with this exact struct
 - Return ONLY valid JSON, no other text or markdown code blocks
 - Make sure to parse ALL entries in the file
 
-**Example output format:**
-See the attached `devotional-sample.json` file for the exact format expected.
+**Example output - return a JSON array like this:**
+
+```json
+[
+  {
+    "date": "2026-01-01",
+    "title": "Title text",
+    "quote": "\"Quote text here\" (Jn 16,33)",
+    "verseDay": "Jn 16,31-33",
+    "verseEvening": "Ž 121",
+    "content": "First paragraph.\n\nSecond paragraph with **bold** and *italic* text.",
+    "prayer": "Prayer text here",
+    "questions": "Question 1\nQuestion 2"
+  }
+]
+```
 
 Return the complete parsed JSON array for all devotionals.
 

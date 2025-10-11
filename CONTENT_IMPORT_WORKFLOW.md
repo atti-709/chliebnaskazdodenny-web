@@ -92,14 +92,13 @@ node upload-to-notion.mjs devotionals-2026-jan.json --start 10 --end 20
 
 ## Files Reference
 
-| File                     | Purpose                                   |
-| ------------------------ | ----------------------------------------- |
-| `GEMINI_PROMPT.md`       | Prompt to use with Gemini AI for parsing  |
-| `devotional-sample.json` | Example of expected JSON format           |
-| `FORMATTING_EXAMPLE.md`  | How Markdown formatting works             |
-| `upload-to-notion.mjs`   | Script to upload JSON to Notion           |
-| `UPLOAD_GUIDE.md`        | Detailed usage guide for upload script    |
-| `discover-schema.mjs`    | Utility to inspect Notion database schema |
+| File                    | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `GEMINI_PROMPT.md`      | Prompt to use with Gemini AI for parsing  |
+| `FORMATTING_EXAMPLE.md` | How Markdown formatting works             |
+| `upload-to-notion.mjs`  | Script to upload JSON to Notion           |
+| `UPLOAD_GUIDE.md`       | Detailed usage guide for upload script    |
+| `discover-schema.mjs`   | Utility to inspect Notion database schema |
 
 ## Tips & Best Practices
 
@@ -144,7 +143,7 @@ Make sure your Notion database has all required properties.
 ### Formatting not preserved
 
 - Make sure Gemini converted HTML to Markdown (`**bold**`, `*italic*`)
-- Check the `devotional-sample.json` for correct format
+- Check the JSON format matches the structure in `GEMINI_PROMPT.md`
 - The upload script will convert Markdown to Notion rich text
 
 ## Advanced Usage

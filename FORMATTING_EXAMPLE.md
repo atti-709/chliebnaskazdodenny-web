@@ -39,5 +39,5 @@ The Notion upload script (next step) will automatically convert:
 - `*text*` → Italic in Notion
 - Plain text → Regular text in Notion
 
-See `devotional-sample.json` for a complete example with formatting.
+See the example in `GEMINI_PROMPT.md` for the complete JSON structure with formatting.
 
