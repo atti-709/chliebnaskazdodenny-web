@@ -1,25 +1,70 @@
 // Serverless API Route for Notion Integration
 // This handles Notion API calls server-side
 
-import { Client } from '@notionhq/client'
-import { convertNotionPageToDevotional } from '../src/utils/notion.js'
+// Use dynamic import for ES module compatibility
+const { Client } = require('@notionhq/client')
 
-const notion = new Client({
-  auth: process.env.VITE_NOTION_API_KEY,
-})
-
-const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
-
-// Fetches blocks for a page and converts to devotional format
-const fetchAndConvertPage = async page => {
-  const { results: blocks } = await notion.blocks.children.list({
-    block_id: page.id,
-  })
-
-  return convertNotionPageToDevotional(page, blocks)
+// Notion utilities - CommonJS compatible
+const richTextToPlainText = richText => {
+  return richText ? richText.map(text => text.plain_text).join('') : ''
 }
 
-export default async function handler(req, res) {
+const extractDate = properties => {
+  const dateProperty = properties.Date?.date?.start || properties.date?.date?.start
+  return dateProperty ? dateProperty.split('T')[0] : ''
+}
+
+const extractTitle = properties => {
+  return richTextToPlainText(properties.Title?.title || properties.title?.title)
+}
+
+const extractQuote = properties => {
+  return richTextToPlainText(properties.Quote?.rich_text || properties.quote?.rich_text)
+}
+
+const extractSpotifyUri = properties => {
+  return properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
+}
+
+const extractQuestions = properties => {
+  return richTextToPlainText(properties.Questions?.rich_text || properties.questions?.rich_text)
+}
+
+const extractVerseDay = properties => {
+  return richTextToPlainText(properties.VerseDay?.rich_text || properties.verseDay?.rich_text)
+}
+
+const extractPrayer = properties => {
+  return richTextToPlainText(properties.Prayer?.rich_text || properties.prayer?.rich_text)
+}
+
+const extractVerseEvening = properties => {
+  return richTextToPlainText(
+    properties.VerseEvening?.rich_text || properties.verseEvening?.rich_text
+  )
+}
+
+const convertNotionPageToDevotional = (page, blocks) => {
+  const properties = page.properties
+
+  return {
+    id: page.id,
+    title: extractTitle(properties),
+    date: extractDate(properties),
+    quote: extractQuote(properties),
+    text: blocks,
+    spotifyEmbedUri: extractSpotifyUri(properties),
+    questions: extractQuestions(properties),
+    verseDay: extractVerseDay(properties),
+    prayer: extractPrayer(properties),
+    verseEvening: extractVerseEvening(properties),
+    createdAt: page.created_time,
+    updatedAt: page.last_edited_time,
+    url: page.url,
+  }
+}
+
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -42,6 +87,22 @@ export default async function handler(req, res) {
     console.error('Missing required environment variables')
     res.status(500).json({ error: 'Server configuration error' })
     return
+  }
+
+  // Initialize Notion client inside handler
+  const notion = new Client({
+    auth: process.env.VITE_NOTION_API_KEY,
+  })
+
+  const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
+
+  // Fetches blocks for a page and converts to devotional format
+  const fetchAndConvertPage = async page => {
+    const { results: blocks } = await notion.blocks.children.list({
+      block_id: page.id,
+    })
+
+    return convertNotionPageToDevotional(page, blocks)
   }
 
   try {
