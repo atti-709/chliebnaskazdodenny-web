@@ -11,6 +11,9 @@ function Header({
   onNextDay,
   onDateSelect,
   onToggleDatePicker,
+  availableDates,
+  hasPreviousDate,
+  hasNextDate,
 }) {
   const isToday = format(currentDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
   const [isClosing, setIsClosing] = useState(false)
@@ -45,6 +48,8 @@ function Header({
             onPreviousDay={onPreviousDay}
             onNextDay={onNextDay}
             onToggleDatePicker={onToggleDatePicker}
+            hasPreviousDate={hasPreviousDate}
+            hasNextDate={hasNextDate}
           />
 
           {isPickerMounted && (
@@ -54,6 +59,7 @@ function Header({
               onDateSelect={onDateSelect}
               onClose={onToggleDatePicker}
               isClosing={isClosing}
+              availableDates={availableDates}
             />
           )}
         </div>

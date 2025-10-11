@@ -2,12 +2,23 @@ import { format } from 'date-fns'
 import { sk } from 'date-fns/locale'
 import { ChevronLeftIcon, ChevronRightIcon } from './icons'
 
-function DateNavigation({ currentDate, isToday, onPreviousDay, onNextDay, onToggleDatePicker }) {
+function DateNavigation({
+  currentDate,
+  isToday,
+  onPreviousDay,
+  onNextDay,
+  onToggleDatePicker,
+  hasPreviousDate,
+  hasNextDate,
+}) {
   return (
     <div className="flex items-center justify-center gap-4">
       <button
         onClick={onPreviousDay}
-        className="p-2 rounded-full hover:bg-gray-100 smooth-transition"
+        disabled={!hasPreviousDate}
+        className={`p-2 rounded-full smooth-transition ${
+          hasPreviousDate ? 'hover:bg-gray-100 cursor-pointer' : 'opacity-30 cursor-not-allowed'
+        }`}
         aria-label="Previous day"
       >
         <ChevronLeftIcon />
@@ -25,7 +36,10 @@ function DateNavigation({ currentDate, isToday, onPreviousDay, onNextDay, onTogg
 
       <button
         onClick={onNextDay}
-        className="p-2 rounded-full hover:bg-gray-100 smooth-transition"
+        disabled={!hasNextDate}
+        className={`p-2 rounded-full smooth-transition ${
+          hasNextDate ? 'hover:bg-gray-100 cursor-pointer' : 'opacity-30 cursor-not-allowed'
+        }`}
         aria-label="Next day"
       >
         <ChevronRightIcon />

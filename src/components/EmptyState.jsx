@@ -2,7 +2,7 @@ import { BookIcon } from './icons'
 
 function EmptyState({ isFutureDate }) {
   return (
-    <div className="text-center py-20 fade-in">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)] fade-in">
       <div className="mb-4">
         <BookIcon />
       </div>

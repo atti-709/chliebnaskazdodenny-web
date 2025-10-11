@@ -14,8 +14,9 @@ import {
 import { sk } from 'date-fns/locale'
 import { ChevronLeftIcon, ChevronRightIcon } from './icons'
 
-function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing }) {
+function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, availableDates }) {
   const pickerRef = useRef(null)
+  const [viewMonth, setViewMonth] = useState(currentDate)
 
   // Close on click outside
   useEffect(() => {
@@ -33,7 +34,11 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing }) {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [onClose])
-  const [viewMonth, setViewMonth] = useState(currentDate)
+
+  // Update view month when current date changes
+  useEffect(() => {
+    setViewMonth(currentDate)
+  }, [currentDate])
 
   const monthStart = startOfMonth(viewMonth)
   const monthEnd = endOfMonth(viewMonth)
@@ -100,16 +105,21 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing }) {
           const isCurrentMonth = isSameMonth(day, viewMonth)
           const isSelected = isSameDay(day, currentDate)
           const isToday = isSameDay(day, today)
+          const dateString = format(day, 'yyyy-MM-dd')
+          const isAvailable = availableDates.has(dateString)
 
           return (
             <button
               key={index}
-              onClick={() => handleDayClick(day)}
+              onClick={() => isAvailable && handleDayClick(day)}
+              disabled={!isAvailable}
               className={`
                 aspect-square p-1 rounded-md text-xs smooth-transition
-                ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100'}
+                ${!isCurrentMonth ? 'text-gray-300' : ''}
+                ${isCurrentMonth && !isAvailable ? 'text-gray-400 cursor-not-allowed opacity-40' : ''}
+                ${isCurrentMonth && isAvailable ? 'text-gray-700 hover:bg-gray-100 cursor-pointer' : ''}
                 ${isSelected ? 'bg-accent text-white hover:bg-accent/90 font-semibold' : ''}
-                ${isToday && !isSelected ? 'ring-1 ring-accent ring-inset' : ''}
+                ${isToday && !isSelected && isAvailable ? 'ring-1 ring-accent ring-inset' : ''}
               `}
             >
               {format(day, 'd')}
@@ -122,10 +132,21 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing }) {
       <div className="mt-3 pt-3 border-t border-gray-200">
         <button
           onClick={() => {
-            onDateSelect(format(today, 'yyyy-MM-dd'))
-            onClose()
+            const todayString = format(today, 'yyyy-MM-dd')
+            if (availableDates.has(todayString)) {
+              onDateSelect(todayString)
+              onClose()
+            }
           }}
-          className="w-full py-1.5 px-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-700 smooth-transition"
+          disabled={!availableDates.has(format(today, 'yyyy-MM-dd'))}
+          className={`
+            w-full py-1.5 px-3 rounded-lg text-xs font-medium smooth-transition
+            ${
+              availableDates.has(format(today, 'yyyy-MM-dd'))
+                ? 'bg-gray-50 hover:bg-gray-100 text-gray-700 cursor-pointer'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+            }
+          `}
         >
           Dnes
         </button>

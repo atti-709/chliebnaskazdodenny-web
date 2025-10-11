@@ -29,6 +29,7 @@ function updateURL(date) {
   const dateString = format(date, 'yyyy-MM-dd')
   const url = new URL(window.location)
   url.searchParams.set('date', dateString)
+  url.hash = '' // Remove trailing hash
   window.history.pushState({}, '', url)
 }
 
