@@ -1,8 +1,8 @@
 // Serverless API Route for Notion Integration
-// This handles Notion API calls server-side
-// Using .cjs extension to use CommonJS in ES module project
+// This handles Notion API calls server-side using direct HTTP requests
+// Using CommonJS format for serverless function compatibility
 
-const { Client } = require('@notionhq/client')
+const NOTION_VERSION = '2022-06-28'
 
 // Notion utilities - CommonJS compatible
 const richTextToPlainText = richText => {
@@ -64,6 +64,28 @@ const convertNotionPageToDevotional = (page, blocks) => {
   }
 }
 
+/**
+ * Makes a request to Notion API using fetch
+ */
+async function notionRequest(endpoint, apiKey, options = {}) {
+  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
+    method: options.method || 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Notion-Version': NOTION_VERSION,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Notion API error: ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
 module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -83,26 +105,24 @@ module.exports = async function handler(req, res) {
   }
 
   // Verify environment variables are set
-  if (!process.env.VITE_NOTION_API_KEY || !process.env.VITE_NOTION_DATABASE_ID) {
+  const NOTION_API_KEY = process.env.VITE_NOTION_API_KEY
+  const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
+
+  if (!NOTION_API_KEY || !DATABASE_ID) {
     console.error('Missing required environment variables')
     res.status(500).json({ error: 'Server configuration error' })
     return
   }
 
-  // Initialize Notion client inside handler
-  const notion = new Client({
-    auth: process.env.VITE_NOTION_API_KEY,
-  })
-
-  const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
-
   // Fetches blocks for a page and converts to devotional format
   const fetchAndConvertPage = async page => {
-    const { results: blocks } = await notion.blocks.children.list({
-      block_id: page.id,
-    })
+    const blocksResponse = await notionRequest(
+      `/blocks/${page.id}/children`,
+      NOTION_API_KEY,
+      { method: 'GET' }
+    )
 
-    return convertNotionPageToDevotional(page, blocks)
+    return convertNotionPageToDevotional(page, blocksResponse.results)
   }
 
   try {
@@ -116,15 +136,20 @@ module.exports = async function handler(req, res) {
         return
       }
 
-      const response = await notion.databases.query({
-        database_id: DATABASE_ID,
-        filter: {
-          property: 'Date',
-          date: {
-            equals: date,
+      const response = await notionRequest(
+        `/databases/${DATABASE_ID}/query`,
+        NOTION_API_KEY,
+        {
+          body: {
+            filter: {
+              property: 'Date',
+              date: {
+                equals: date,
+              },
+            },
           },
-        },
-      })
+        }
+      )
 
       if (response.results.length === 0) {
         res.status(404).json({ error: 'Devotional not found' })
@@ -132,7 +157,7 @@ module.exports = async function handler(req, res) {
       }
 
       const devotional = await fetchAndConvertPage(response.results[0])
-      
+
       // Cache for 1 hour (devotionals don't change frequently)
       res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
       res.status(200).json(devotional)
@@ -149,16 +174,21 @@ module.exports = async function handler(req, res) {
         return
       }
 
-      const response = await notion.databases.query({
-        database_id: DATABASE_ID,
-        sorts: [
-          {
-            property: 'Date',
-            direction: 'descending',
+      const response = await notionRequest(
+        `/databases/${DATABASE_ID}/query`,
+        NOTION_API_KEY,
+        {
+          body: {
+            sorts: [
+              {
+                property: 'Date',
+                direction: 'descending',
+              },
+            ],
+            page_size: limit,
           },
-        ],
-        page_size: limit,
-      })
+        }
+      )
 
       const devotionals = []
       for (const page of response.results) {
@@ -174,15 +204,20 @@ module.exports = async function handler(req, res) {
 
     // Get available dates
     if (action === 'getDates') {
-      const response = await notion.databases.query({
-        database_id: DATABASE_ID,
-        sorts: [
-          {
-            property: 'Date',
-            direction: 'descending',
+      const response = await notionRequest(
+        `/databases/${DATABASE_ID}/query`,
+        NOTION_API_KEY,
+        {
+          body: {
+            sorts: [
+              {
+                property: 'Date',
+                direction: 'descending',
+              },
+            ],
           },
-        ],
-      })
+        }
+      )
 
       const dates = response.results
         .map(page => {
@@ -198,18 +233,16 @@ module.exports = async function handler(req, res) {
     }
 
     // Invalid action
-    res.status(400).json({ 
-      error: 'Invalid action. Valid actions are: getByDate, getAll, getDates' 
+    res.status(400).json({
+      error: 'Invalid action. Valid actions are: getByDate, getAll, getDates',
     })
   } catch (error) {
     console.error('Notion API error:', error)
-    
+
     // Don't expose sensitive error details in production
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? error.message 
-      : 'Internal server error'
-    
+    const errorMessage =
+      process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+
     res.status(500).json({ error: errorMessage })
   }
 }
-

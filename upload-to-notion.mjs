@@ -1,4 +1,3 @@
-import { Client } from '@notionhq/client'
 import fs from 'fs/promises'
 import dotenv from 'dotenv'
 
@@ -6,13 +5,35 @@ dotenv.config({ path: '.env.local' })
 
 const NOTION_API_KEY = process.env.VITE_NOTION_API_KEY
 const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
+const NOTION_VERSION = '2022-06-28'
 
 if (!NOTION_API_KEY || !DATABASE_ID) {
   console.error('Error: VITE_NOTION_API_KEY and VITE_NOTION_DATABASE_ID must be set in .env.local')
   process.exit(1)
 }
 
-const notion = new Client({ auth: NOTION_API_KEY })
+/**
+ * Makes a request to Notion API using fetch
+ */
+async function notionRequest(endpoint, options = {}) {
+  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
+    method: options.method || 'POST',
+    headers: {
+      Authorization: `Bearer ${NOTION_API_KEY}`,
+      'Notion-Version': NOTION_VERSION,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Notion API error (${response.status}): ${errorText}`)
+  }
+
+  return response.json()
+}
 
 /**
  * Decodes HTML entities to actual characters
@@ -141,7 +162,7 @@ function markdownToRichText(text) {
   text = unescapeUnicode(text)
   
   const richText = []
-  let currentText = text
+  const currentText = text
   
   // Parse bold (**text**) and italic (*text*)
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g
@@ -232,28 +253,17 @@ function contentToBlocks(content) {
  */
 async function checkExistingPage(date) {
   try {
-    const response = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_KEY}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const data = await notionRequest(`/databases/${DATABASE_ID}/query`, {
+      body: {
         filter: {
           property: 'Date',
           date: {
             equals: date
           }
         }
-      })
+      }
     })
     
-    if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
     return data.results.length > 0 ? data.results[0] : null
   } catch (error) {
     console.error(`Error checking for existing page:`, error.message)
@@ -266,21 +276,12 @@ async function checkExistingPage(date) {
  */
 async function deletePage(pageId) {
   try {
-    const response = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+    await notionRequest(`/pages/${pageId}`, {
       method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_KEY}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      body: {
         archived: true
-      })
+      }
     })
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`)
-    }
     
     return true
   } catch (error) {
@@ -370,10 +371,12 @@ async function createDevotionalPage(devotional, options = {}) {
     // Create page with content blocks
     const children = contentToBlocks(devotional.content)
     
-    const response = await notion.pages.create({
-      parent: { database_id: DATABASE_ID },
-      properties,
-      children
+    const response = await notionRequest('/pages', {
+      body: {
+        parent: { database_id: DATABASE_ID },
+        properties,
+        children
+      }
     })
     
     console.log(`✅ Created: ${devotional.title} (${response.id})`)
