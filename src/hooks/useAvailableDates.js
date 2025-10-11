@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getAvailableDates } from '../api/notion.ts'
 
 /**
@@ -7,8 +7,13 @@ import { getAvailableDates } from '../api/notion.ts'
 export function useAvailableDates() {
   const [availableDates, setAvailableDates] = useState(new Set())
   const [loading, setLoading] = useState(true)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
+    // Prevent duplicate fetches (especially in React StrictMode)
+    if (hasFetched.current) return
+    hasFetched.current = true
+
     const fetchDates = async () => {
       try {
         const dates = await getAvailableDates()
