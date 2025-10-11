@@ -83,7 +83,7 @@ module.exports = async function handler(req, res) { ... }
 2. Verify property names (case-sensitive):
    - `Title` or `title`
    - `Date` or `date`
-   - `Scripture` or `scripture`
+   - `Quote` or `quote`
    - `Spotify Embed URI` or `spotifyEmbedUri`
 3. Ensure database is shared with your Notion integration
 

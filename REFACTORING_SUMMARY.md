@@ -57,7 +57,7 @@ Centralized Notion data conversion logic:
 - `richTextToPlainText()` - Converts Notion rich text to plain text
 - `extractDate()` - Extracts date from properties
 - `extractTitle()` - Extracts title from properties
-- `extractScripture()` - Extracts scripture from properties
+- `extractQuote()` - Extracts quote from properties
 - `extractSpotifyUri()` - Extracts Spotify URI from properties
 - `convertNotionPageToDevotional()` - Main conversion function
 

@@ -26,10 +26,10 @@ export const extractTitle = properties => {
 }
 
 /**
- * Extracts scripture from Notion page properties
+ * Extracts quote from Notion page properties
  */
-export const extractScripture = properties => {
-  return richTextToPlainText(properties.Scripture?.rich_text || properties.scripture?.rich_text)
+export const extractQuote = properties => {
+  return richTextToPlainText(properties.Quote?.rich_text || properties.quote?.rich_text)
 }
 
 /**
@@ -37,6 +37,34 @@ export const extractScripture = properties => {
  */
 export const extractSpotifyUri = properties => {
   return properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
+}
+
+/**
+ * Extracts questions from Notion page properties
+ */
+export const extractQuestions = properties => {
+  return richTextToPlainText(properties.Questions?.rich_text || properties.questions?.rich_text)
+}
+
+/**
+ * Extracts day verse from Notion page properties
+ */
+export const extractVerseDay = properties => {
+  return richTextToPlainText(properties.VerseDay?.rich_text || properties.verseDay?.rich_text)
+}
+
+/**
+ * Extracts prayer from Notion page properties
+ */
+export const extractPrayer = properties => {
+  return richTextToPlainText(properties.Prayer?.rich_text || properties.prayer?.rich_text)
+}
+
+/**
+ * Extracts evening verse from Notion page properties
+ */
+export const extractVerseEvening = properties => {
+  return richTextToPlainText(properties.VerseEvening?.rich_text || properties.verseEvening?.rich_text)
 }
 
 /**
@@ -52,9 +80,13 @@ export const convertNotionPageToDevotional = (page, blocks) => {
     id: page.id,
     title: extractTitle(properties),
     date: extractDate(properties),
-    scripture: extractScripture(properties),
+    quote: extractQuote(properties),
     text: blocks,
     spotifyEmbedUri: extractSpotifyUri(properties),
+    questions: extractQuestions(properties),
+    verseDay: extractVerseDay(properties),
+    prayer: extractPrayer(properties),
+    verseEvening: extractVerseEvening(properties),
     createdAt: page.created_time,
     updatedAt: page.last_edited_time,
     url: page.url,

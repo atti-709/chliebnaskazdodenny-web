@@ -103,7 +103,7 @@ The required Notion database properties are:
 | ----------------- | --------- | --------------------------------------- |
 | Title             | Title     | The devotional title                    |
 | Date              | Date      | The devotional date (YYYY-MM-DD format) |
-| Scripture         | Rich text | The scripture reference                 |
+| Quote             | Rich text | The quote reference                     |
 | Spotify Embed URI | URL       | The Spotify embed URI                   |
 
 The devotional content should be written in the page content area using Notion blocks.

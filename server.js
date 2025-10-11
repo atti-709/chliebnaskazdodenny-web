@@ -50,14 +50,24 @@ const convertNotionPageToDevotional = async page => {
   // Extract date
   const date = properties.Date?.date?.start || properties.date?.date?.start || ''
 
-  // Extract scripture
-  const scripture = richTextToPlainText(
-    properties.Scripture?.rich_text || properties.scripture?.rich_text
-  )
+  // Extract quote
+  const quote = richTextToPlainText(properties.Quote?.rich_text || properties.quote?.rich_text)
 
   // Extract Spotify embed URI (URL type)
   const spotifyEmbedUri =
     properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
+
+  // Extract new properties
+  const questions = richTextToPlainText(
+    properties.Questions?.rich_text || properties.questions?.rich_text
+  )
+  const verseDay = richTextToPlainText(
+    properties.VerseDay?.rich_text || properties.verseDay?.rich_text
+  )
+  const prayer = richTextToPlainText(properties.Prayer?.rich_text || properties.prayer?.rich_text)
+  const verseEvening = richTextToPlainText(
+    properties.VerseEvening?.rich_text || properties.verseEvening?.rich_text
+  )
 
   // Fetch page content (blocks)
   const { results: blocks } = await notion.blocks.children.list({
@@ -68,9 +78,13 @@ const convertNotionPageToDevotional = async page => {
     id: page.id,
     title,
     date: date.split('T')[0], // Extract just the date part
-    scripture,
+    quote,
     text: blocks,
     spotifyEmbedUri,
+    questions,
+    verseDay,
+    prayer,
+    verseEvening,
     createdAt: page.created_time,
     updatedAt: page.last_edited_time,
     url: page.url,

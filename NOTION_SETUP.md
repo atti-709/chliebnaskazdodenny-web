@@ -17,8 +17,12 @@ Create a database in Notion with the following properties:
 
 - **Title** (Title) - The devotional title
 - **Date** (Date) - The devotional date
-- **Scripture** (Rich text) - The scripture reference
-- **Spotify Embed URI** (Rich text) - The Spotify embed URI
+- **Quote** (Rich text) - The quote reference
+- **Spotify Embed URI** (URL) - The Spotify embed URI
+- **VerseDay** (Rich text) - Bible passage for today's reading (optional)
+- **VerseEvening** (Rich text) - Bible passage for evening reading (optional)
+- **Questions** (Rich text) - Reflection questions (optional)
+- **Prayer** (Rich text) - Prayer text (optional)
 - **Text** (Page content) - The devotional content (written as Notion blocks)
 
 ## 3. Share Database with Integration
@@ -55,14 +59,30 @@ VITE_NOTION_DATABASE_ID=your_notion_database_id_here
 
 Your Notion database should have these properties:
 
-| Property Name     | Type      | Description                             |
-| ----------------- | --------- | --------------------------------------- |
-| Title             | Title     | The devotional title                    |
-| Date              | Date      | The devotional date (YYYY-MM-DD format) |
-| Scripture         | Rich text | The scripture reference                 |
-| Spotify Embed URI | URL       | The Spotify embed URI                   |
+| Property Name     | Type      | Required | Description                                                    |
+| ----------------- | --------- | -------- | -------------------------------------------------------------- |
+| Title             | Title     | Yes      | The devotional title                                           |
+| Date              | Date      | Yes      | The devotional date (YYYY-MM-DD format)                        |
+| Quote             | Rich text | Yes      | The quote reference (e.g., "Marek 2:17") - verse from VerseDay |
+| Spotify Embed URI | URL       | No       | The Spotify embed URI                                          |
+| VerseDay          | Rich text | No       | Bible passage for today's reading (source of the quote)        |
+| VerseEvening      | Rich text | No       | Bible passage for evening reading ("Večerné čítanie")          |
+| Questions         | Rich text | No       | Reflection questions for readers                               |
+| Prayer            | Rich text | No       | Prayer text                                                    |
 
 The devotional content should be written directly in the page content area using Notion's rich text editor.
+
+### Display Order in UI
+
+The fields will be displayed in this order:
+1. Title and Quote (at the top)
+2. Bible References in two-column layout (side by side on desktop, stacked on mobile):
+   - VerseDay (if provided) - labeled as "Čítanie" - warm amber color - the full passage that the quote comes from
+   - VerseEvening (if provided) - labeled as "Večerné čítanie" - gray color - evening Bible reading
+3. Spotify Player (if URI provided)
+4. Main devotional text content
+5. Questions (if provided) - labeled as "Otázky na zamyslenie"
+6. Prayer (if provided) - labeled as "Modlitba"
 
 ## 7. Architecture Notes
 

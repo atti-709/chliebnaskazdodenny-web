@@ -15,7 +15,7 @@ App (45 lines)
 ├── Main Content (conditional rendering)
 │   ├── LoadingSpinner (if loading)
 │   ├── DevotionalContent (if data available)
-│   │   ├── Title & Scripture
+│   │   ├── Title & Quote
 │   │   ├── SpotifyPlayer
 │   │   └── NotionBlocksRenderer
 │   │       └── (various block components)

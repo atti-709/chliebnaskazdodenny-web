@@ -101,11 +101,23 @@ export interface NotionPageProperties {
       time_zone?: string | null
     } | null
   }
-  scripture: {
+  Quote: {
     rich_text: NotionTextNode[]
   }
-  spotifyEmbedUri: {
+  Questions: {
     rich_text: NotionTextNode[]
+  }
+  VerseDay: {
+    rich_text: NotionTextNode[]
+  }
+  Prayer: {
+    rich_text: NotionTextNode[]
+  }
+  VerseEvening: {
+    rich_text: NotionTextNode[]
+  }
+  'Spotify Embed URI': {
+    url: string | null
   }
 }
 
@@ -129,25 +141,19 @@ export interface NotionQueryResponse {
   page_or_database: Record<string, unknown>
 }
 
-// Converted devotional data structure (compatible with existing frontend)
+// Devotional data structure returned from API
 export interface Devotional {
   id: string
   title: string
   date: string // ISO date format: YYYY-MM-DD
-  scripture: string
+  quote: string
   text: NotionBlock[]
   spotifyEmbedUri: string
+  questions: string
+  verseDay: string
+  prayer: string
+  verseEvening: string
   createdAt: string
   updatedAt: string
   url: string
-}
-
-// Client function return types
-export interface DevotionalData {
-  id: string
-  date: string
-  title: string
-  scripture: string
-  text: NotionBlock[]
-  spotifyEmbedUri: string
 }
