@@ -68,8 +68,12 @@ Parse ALL devotionals in the file and return a JSON array with this exact struct
   - Keep the quote text and Bible reference as plain text
   - Do NOT add a trailing period at the end of the quote
   - Format: `"Quote text here" (Bible Reference)` - note: no period after the closing parenthesis
+- **Prayer formatting:**
+  - The `prayer` field should be PLAIN TEXT without any Markdown formatting
+  - Do NOT use `**bold**` or `*italic*` or asterisks in prayer
+  - Keep the prayer text as plain text
 - **Content formatting:**
-  - Preserve formatting in `content`, `prayer`, and `questions` by converting HTML to Markdown:
+  - Preserve formatting in `content` and `questions` by converting HTML to Markdown:
     - `<b>` or `<strong>` → `**text**`
     - `<i>` or `<em>` → `*text*`
     - Keep quotes in quotation marks "like this"

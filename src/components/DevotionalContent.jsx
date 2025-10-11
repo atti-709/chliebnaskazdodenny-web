@@ -37,6 +37,7 @@ function formatQuote(quote) {
 
 function DevotionalContent({ devotional }) {
   const { text: quoteText, reference: quoteReference } = formatQuote(devotional.quote)
+  const prayerText = stripMarkdown(devotional.prayer)
 
   return (
     <article className="fade-in space-y-8">
@@ -100,12 +101,12 @@ function DevotionalContent({ devotional }) {
       )}
 
       {/* Prayer */}
-      {devotional.prayer && (
+      {prayerText && (
         <div className="bg-purple-50 rounded-lg p-6 border-l-4 border-purple-500">
           <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
             Modlitba
           </p>
-          <p className="text-base text-gray-700 italic whitespace-pre-line">{devotional.prayer}</p>
+          <p className="text-base text-gray-700 italic whitespace-pre-line">{prayerText}</p>
         </div>
       )}
     </article>
