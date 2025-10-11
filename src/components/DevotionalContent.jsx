@@ -1,7 +1,43 @@
 import { NotionBlocksRenderer } from './NotionBlocksRenderer/index.tsx'
 import SpotifyPlayer from './SpotifyPlayer'
 
+// Strip Markdown formatting (asterisks) from text
+function stripMarkdown(text) {
+  if (!text) return ''
+  // Remove bold (**text**)
+  let result = text.replace(/\*\*(.+?)\*\*/g, '$1')
+  // Remove italic (*text*)
+  result = result.replace(/\*(.+?)\*/g, '$1')
+  return result
+}
+
+// Format quote: remove trailing period, split quote and reference
+function formatQuote(quote) {
+  if (!quote) return { text: '', reference: '' }
+
+  const cleaned = stripMarkdown(quote)
+
+  // Match text and reference in parentheses
+  // Pattern: "quote text" (Reference)
+  const match = cleaned.match(/^(.+?)\s*\(([^)]+)\)\.?$/)
+
+  if (match) {
+    let text = match[1].trim()
+    const reference = match[2].trim()
+
+    // Remove trailing period from text
+    text = text.replace(/\.$/, '')
+
+    return { text, reference }
+  }
+
+  // If no match, return as-is but remove trailing period
+  return { text: cleaned.replace(/\.$/, ''), reference: '' }
+}
+
 function DevotionalContent({ devotional }) {
+  const { text: quoteText, reference: quoteReference } = formatQuote(devotional.quote)
+
   return (
     <article className="fade-in space-y-8">
       {/* Title and Quote */}
@@ -9,7 +45,10 @@ function DevotionalContent({ devotional }) {
         <h2 className="text-3xl md:text-4xl font-serif font-light text-gray-800">
           {devotional.title}
         </h2>
-        <p className="text-lg text-accent font-medium">{devotional.quote}</p>
+        <div className="text-lg text-accent font-medium">
+          <p className="italic">{quoteText}</p>
+          {quoteReference && <p className="mt-1 italic">({quoteReference})</p>}
+        </div>
       </div>
 
       {/* Bible References - Two Column Layout */}

@@ -246,7 +246,7 @@ async function createDevotionalPage(devotional, options = {}) {
         rich_text: [
           {
             type: 'text',
-            text: { content: unescapeUnicode(devotional.quote || '') }
+            text: { content: stripMarkdown(devotional.quote || '') }
           }
         ]
       },
