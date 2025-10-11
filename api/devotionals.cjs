@@ -1,7 +1,7 @@
 // Serverless API Route for Notion Integration
 // This handles Notion API calls server-side
+// Using .cjs extension to use CommonJS in ES module project
 
-// Use dynamic import for ES module compatibility
 const { Client } = require('@notionhq/client')
 
 // Notion utilities - CommonJS compatible
@@ -212,3 +212,4 @@ module.exports = async function handler(req, res) {
     res.status(500).json({ error: errorMessage })
   }
 }
+
