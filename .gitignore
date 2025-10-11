@@ -31,3 +31,8 @@ dist-ssr
 # ESLint
 .eslintcache
 
+# Devotional data files (large files, not for git)
+devotionals-*.json
+CHLIEB*.txt
+CHLIEB*.html
+*.html.zip
