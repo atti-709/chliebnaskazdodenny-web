@@ -1,10 +1,10 @@
 // Serverless API Route for Notion Integration
 // This handles Notion API calls server-side using direct HTTP requests
-// Using CommonJS format for serverless function compatibility
+// Using ES module format
 
 const NOTION_VERSION = '2022-06-28'
 
-// Notion utilities - CommonJS compatible
+// Notion utilities
 const richTextToPlainText = richText => {
   return richText ? richText.map(text => text.plain_text).join('') : ''
 }
@@ -86,7 +86,7 @@ async function notionRequest(endpoint, apiKey, options = {}) {
   return response.json()
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')

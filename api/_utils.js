@@ -1,110 +1,98 @@
 /**
  * Notion API utilities for serverless functions
- * CommonJS version for use in API routes
+ * Provides helper functions to extract and transform Notion data
  */
 
 /**
- * Converts Notion rich text to plain text
+ * Converts Notion rich text array to plain text string
+ * @param {Array} richText - Notion rich text array
+ * @returns {string} Plain text string
  */
-const richTextToPlainText = richText => {
-  return richText ? richText.map(text => text.plain_text).join('') : ''
-}
+export const richTextToPlainText = richText =>
+  richText?.map(text => text.plain_text).join('') ?? ''
 
 /**
- * Extracts date from Notion page properties
+ * Extracts and formats date from Notion page properties (YYYY-MM-DD)
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Formatted date string
  */
-const extractDate = properties => {
-  const dateProperty = properties.Date?.date?.start || properties.date?.date?.start
-  return dateProperty ? dateProperty.split('T')[0] : ''
-}
+export const extractDate = properties =>
+  (properties.Date?.date?.start || properties.date?.date?.start)?.split('T')[0] ?? ''
 
 /**
  * Extracts title from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Title string
  */
-const extractTitle = properties => {
-  return richTextToPlainText(properties.Title?.title || properties.title?.title)
-}
+export const extractTitle = properties =>
+  richTextToPlainText(properties.Title?.title || properties.title?.title)
 
 /**
  * Extracts quote from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Quote string
  */
-const extractQuote = properties => {
-  return richTextToPlainText(properties.Quote?.rich_text || properties.quote?.rich_text)
-}
+export const extractQuote = properties =>
+  richTextToPlainText(properties.Quote?.rich_text || properties.quote?.rich_text)
 
 /**
  * Extracts Spotify embed URI from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Spotify URI or empty string
  */
-const extractSpotifyUri = properties => {
-  return properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
-}
+export const extractSpotifyUri = properties =>
+  properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
 
 /**
- * Extracts questions from Notion page properties
+ * Extracts reflection questions from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Questions string
  */
-const extractQuestions = properties => {
-  return richTextToPlainText(properties.Questions?.rich_text || properties.questions?.rich_text)
-}
+export const extractQuestions = properties =>
+  richTextToPlainText(properties.Questions?.rich_text || properties.questions?.rich_text)
 
 /**
- * Extracts day verse from Notion page properties
+ * Extracts morning/day verse from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Day verse string
  */
-const extractVerseDay = properties => {
-  return richTextToPlainText(properties.VerseDay?.rich_text || properties.verseDay?.rich_text)
-}
+export const extractVerseDay = properties =>
+  richTextToPlainText(properties.VerseDay?.rich_text || properties.verseDay?.rich_text)
 
 /**
  * Extracts prayer from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Prayer string
  */
-const extractPrayer = properties => {
-  return richTextToPlainText(properties.Prayer?.rich_text || properties.prayer?.rich_text)
-}
+export const extractPrayer = properties =>
+  richTextToPlainText(properties.Prayer?.rich_text || properties.prayer?.rich_text)
 
 /**
  * Extracts evening verse from Notion page properties
+ * @param {Object} properties - Notion page properties
+ * @returns {string} Evening verse string
  */
-const extractVerseEvening = properties => {
-  return richTextToPlainText(
-    properties.VerseEvening?.rich_text || properties.verseEvening?.rich_text
-  )
-}
+export const extractVerseEvening = properties =>
+  richTextToPlainText(properties.VerseEvening?.rich_text || properties.verseEvening?.rich_text)
 
 /**
- * Converts Notion page to Devotional format
+ * Converts a Notion page and its blocks into a Devotional object
  * @param {Object} page - Notion page object
- * @param {Array} blocks - Notion blocks array
- * @returns {Object} Devotional object
+ * @param {Array} blocks - Array of Notion block objects
+ * @returns {Object} Structured devotional object
  */
-const convertNotionPageToDevotional = (page, blocks) => {
-  const properties = page.properties
-
-  return {
-    id: page.id,
-    title: extractTitle(properties),
-    date: extractDate(properties),
-    quote: extractQuote(properties),
-    text: blocks,
-    spotifyEmbedUri: extractSpotifyUri(properties),
-    questions: extractQuestions(properties),
-    verseDay: extractVerseDay(properties),
-    prayer: extractPrayer(properties),
-    verseEvening: extractVerseEvening(properties),
-    createdAt: page.created_time,
-    updatedAt: page.last_edited_time,
-    url: page.url,
-  }
-}
-
-module.exports = {
-  richTextToPlainText,
-  extractDate,
-  extractTitle,
-  extractQuote,
-  extractSpotifyUri,
-  extractQuestions,
-  extractVerseDay,
-  extractPrayer,
-  extractVerseEvening,
-  convertNotionPageToDevotional,
-}
-
+export const convertNotionPageToDevotional = (page, blocks) => ({
+  id: page.id,
+  title: extractTitle(page.properties),
+  date: extractDate(page.properties),
+  quote: extractQuote(page.properties),
+  text: blocks,
+  spotifyEmbedUri: extractSpotifyUri(page.properties),
+  questions: extractQuestions(page.properties),
+  verseDay: extractVerseDay(page.properties),
+  prayer: extractPrayer(page.properties),
+  verseEvening: extractVerseEvening(page.properties),
+  createdAt: page.created_time,
+  updatedAt: page.last_edited_time,
+  url: page.url,
+})
