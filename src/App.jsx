@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { format, addDays, subDays, parseISO, isAfter, startOfDay } from 'date-fns'
-import { BlocksRenderer } from '@strapi/blocks-react-renderer'
-import { getDevotionalByDate } from './api/strapi.ts'
+import { NotionBlocksRenderer } from './components/NotionBlocksRenderer'
+import { getDevotionalByDate } from './api/notion.ts'
 
 function App() {
   const today = startOfDay(new Date())
@@ -19,7 +19,7 @@ function App() {
         const data = await getDevotionalByDate(dateString)
         setDevotional(data)
       } catch (error) {
-        console.error('Error fetching devotional from Strapi:', error)
+        console.error('Error fetching devotional from Notion:', error)
         setDevotional(null)
       } finally {
         setLoading(false)
@@ -176,7 +176,7 @@ function App() {
                 lineHeight: '1.8',
               }}
             >
-              <BlocksRenderer content={devotional.text} />
+              <NotionBlocksRenderer content={devotional.text} />
             </div>
           </article>
         ) : (
