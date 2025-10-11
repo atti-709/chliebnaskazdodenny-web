@@ -1,4 +1,6 @@
-import { isAfter } from 'date-fns'
+import { useEffect } from 'react'
+import { isAfter, format } from 'date-fns'
+import { sk } from 'date-fns/locale'
 import { useDevotional } from './hooks/useDevotional'
 import { useDateNavigation } from './hooks/useDateNavigation'
 import Header from './components/Header'
@@ -21,6 +23,12 @@ function App() {
   const { devotional, loading } = useDevotional(currentDate)
 
   const isFutureDate = isAfter(currentDate, today)
+
+  // Update page title with current date
+  useEffect(() => {
+    const dateStr = format(currentDate, 'd. MMMM yyyy', { locale: sk })
+    document.title = `${dateStr} - Chlieb náš každodenný`
+  }, [currentDate])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
