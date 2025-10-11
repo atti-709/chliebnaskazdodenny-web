@@ -19,12 +19,21 @@ function App() {
     handleNextDay,
     handleDateSelect,
     toggleDatePicker,
+    hasNavigatedToClosest,
+    navigateToClosestDate,
   } = useDateNavigation()
 
   const { devotional, loading } = useDevotional(currentDate)
-  const { availableDates } = useAvailableDates()
+  const { availableDates, loading: datesLoading } = useAvailableDates()
 
   const isFutureDate = isAfter(currentDate, today)
+
+  // Navigate to closest available date if URL didn't have a date parameter
+  useEffect(() => {
+    if (!hasNavigatedToClosest && !datesLoading && availableDates.size > 0) {
+      navigateToClosestDate(availableDates)
+    }
+  }, [hasNavigatedToClosest, datesLoading, availableDates, navigateToClosestDate])
 
   // Check if there are available episodes on immediate next/previous day
   const { hasPreviousDate, hasNextDate } = useMemo(() => {

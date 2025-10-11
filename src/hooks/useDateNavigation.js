@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { addDays, subDays, parseISO, startOfDay, format, isValid } from 'date-fns'
+import { addDays, subDays, parseISO, startOfDay, format, isValid, differenceInCalendarDays } from 'date-fns'
 
 /**
  * Get initial date from URL or use today
+ * Returns { date, hasDateParam } where hasDateParam indicates if URL had a date parameter
  */
 function getInitialDate() {
   const params = new URLSearchParams(window.location.search)
@@ -12,14 +13,14 @@ function getInitialDate() {
     try {
       const parsedDate = parseISO(dateParam)
       if (isValid(parsedDate)) {
-        return startOfDay(parsedDate)
+        return { date: startOfDay(parsedDate), hasDateParam: true }
       }
     } catch (e) {
       // Invalid date in URL, fall back to today
     }
   }
   
-  return startOfDay(new Date())
+  return { date: startOfDay(new Date()), hasDateParam: false }
 }
 
 /**
@@ -34,12 +35,43 @@ function updateURL(date) {
 }
 
 /**
+ * Find the closest available date to a target date
+ */
+export function findClosestDate(targetDate, availableDates) {
+  if (availableDates.size === 0) return null
+  
+  const targetDateStr = format(targetDate, 'yyyy-MM-dd')
+  
+  // If target date has a devotional, use it
+  if (availableDates.has(targetDateStr)) {
+    return targetDateStr
+  }
+  
+  // Otherwise, find the closest date
+  const sortedDates = Array.from(availableDates).sort()
+  let closestDate = sortedDates[0]
+  let minDiff = Math.abs(differenceInCalendarDays(parseISO(sortedDates[0]), targetDate))
+  
+  for (const dateStr of sortedDates) {
+    const diff = Math.abs(differenceInCalendarDays(parseISO(dateStr), targetDate))
+    if (diff < minDiff) {
+      minDiff = diff
+      closestDate = dateStr
+    }
+  }
+  
+  return closestDate
+}
+
+/**
  * Custom hook for managing date navigation state
  */
 export function useDateNavigation() {
   const today = startOfDay(new Date())
-  const [currentDate, setCurrentDate] = useState(getInitialDate)
+  const [initialState] = useState(getInitialDate)
+  const [currentDate, setCurrentDate] = useState(initialState.date)
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [hasNavigatedToClosest, setHasNavigatedToClosest] = useState(initialState.hasDateParam)
 
   // Update URL when date changes
   useEffect(() => {
@@ -49,8 +81,8 @@ export function useDateNavigation() {
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      const newDate = getInitialDate()
-      setCurrentDate(newDate)
+      const { date } = getInitialDate()
+      setCurrentDate(date)
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -78,6 +110,14 @@ export function useDateNavigation() {
     setShowDatePicker(prev => !prev)
   }
 
+  const navigateToClosestDate = (availableDates) => {
+    const closestDate = findClosestDate(today, availableDates)
+    if (closestDate) {
+      handleDateSelect(closestDate)
+      setHasNavigatedToClosest(true)
+    }
+  }
+
   return {
     currentDate,
     today,
@@ -86,5 +126,7 @@ export function useDateNavigation() {
     handleNextDay,
     handleDateSelect,
     toggleDatePicker,
+    hasNavigatedToClosest,
+    navigateToClosestDate,
   }
 }
