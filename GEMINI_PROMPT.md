@@ -1,18 +1,3 @@
-# Gemini Parsing Prompt
-
-## How to Export from Google Docs
-
-1. Open your Google Doc with the devotionals
-2. Go to **File** → **Download** → **Web Page (.html, zipped)**
-3. Extract the ZIP file
-4. Find the `.html` file inside and use that file with this prompt
-
----
-
-Copy and paste this prompt into Gemini, then attach the HTML file:
-
----
-
 Parse this Slovak devotional HTML file into a JSON array. The HTML preserves rich text formatting from Google Docs. Each devotional entry has the following structure:
 
 1. **Date line** (e.g., "Štvrtok 1. januára 2026")
@@ -105,24 +90,3 @@ Parse ALL devotionals in the file and return a JSON array with this exact struct
 ```
 
 Return the complete parsed JSON array for all devotionals.
-
----
-
-## After Getting the Response
-
-1. Copy the JSON response from Gemini
-2. Save it as `devotionals-2026-jan.json` in the project root
-3. Validate it's proper JSON (you can use an online JSON validator or `node -e "JSON.parse(require('fs').readFileSync('devotionals-2026-jan.json'))"`)
-4. Use it with the Notion upload script (next step)
-
-## About Rich Text Formatting
-
-The prompt is configured to preserve formatting by converting HTML to Markdown syntax:
-- **Bold text** appears as `**text**` in JSON
-- *Italic text* appears as `*text*` in JSON
-- Regular text stays as is
-
-This makes the JSON human-readable while preserving all formatting information. When you upload to Notion, you can either:
-1. Convert Markdown to Notion's rich text blocks (we'll create a script for this)
-2. Paste as plain text and add formatting in Notion manually
-

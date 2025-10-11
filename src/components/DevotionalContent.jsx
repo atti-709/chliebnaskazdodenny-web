@@ -90,16 +90,6 @@ function DevotionalContent({ devotional }) {
         <NotionBlocksRenderer content={devotional.text} />
       </div>
 
-      {/* Questions */}
-      {devotional.questions && (
-        <div className="bg-blue-50 rounded-lg p-6 border-l-4 border-blue-500">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
-            Otázky na zamyslenie
-          </p>
-          <p className="text-base text-gray-700 whitespace-pre-line">{devotional.questions}</p>
-        </div>
-      )}
-
       {/* Prayer */}
       {prayerText && (
         <div className="bg-purple-50 rounded-lg p-6 border-l-4 border-purple-500">
@@ -107,6 +97,16 @@ function DevotionalContent({ devotional }) {
             Modlitba
           </p>
           <p className="text-base text-gray-700 italic whitespace-pre-line">{prayerText}</p>
+        </div>
+      )}
+
+      {/* Questions */}
+      {devotional.questions && (
+        <div className="bg-blue-50 rounded-lg p-6 border-l-4 border-blue-500">
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+            Otázky na zamyslenie
+          </p>
+          <p className="text-base text-gray-700 whitespace-pre-line">{devotional.questions}</p>
         </div>
       )}
     </article>
