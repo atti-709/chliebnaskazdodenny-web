@@ -71,7 +71,7 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={handlePrevMonth}
-          className="p-1.5 rounded-lg hover:bg-gray-100 smooth-transition"
+          className="p-1.5 rounded-lg hover:bg-gray-200 smooth-transition"
           aria-label="Previous month"
         >
           <ChevronLeftIcon />
@@ -83,7 +83,7 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
 
         <button
           onClick={handleNextMonth}
-          className="p-1.5 rounded-lg hover:bg-gray-100 smooth-transition"
+          className="p-1.5 rounded-lg hover:bg-gray-200 smooth-transition"
           aria-label="Next month"
         >
           <ChevronRightIcon />
@@ -111,14 +111,14 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
           return (
             <button
               key={index}
-              onClick={() => isAvailable && handleDayClick(day)}
-              disabled={!isAvailable}
+              onClick={() => isAvailable && !isSelected && handleDayClick(day)}
+              disabled={!isAvailable || isSelected}
               className={`
                 aspect-square p-1 rounded-md text-xs smooth-transition
                 ${!isCurrentMonth ? 'text-gray-300' : ''}
                 ${isCurrentMonth && !isAvailable ? 'text-gray-400 cursor-not-allowed opacity-40' : ''}
-                ${isCurrentMonth && isAvailable ? 'text-gray-700 hover:bg-gray-100 cursor-pointer' : ''}
-                ${isSelected ? 'bg-accent text-white hover:bg-accent/90 font-semibold' : ''}
+                ${isCurrentMonth && isAvailable && !isSelected ? 'text-gray-700 hover:bg-gray-200 cursor-pointer' : ''}
+                ${isSelected ? 'bg-accent text-white font-semibold cursor-default' : ''}
                 ${isToday && !isSelected && isAvailable ? 'ring-1 ring-accent ring-inset' : ''}
               `}
             >
@@ -143,7 +143,7 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
             w-full py-1.5 px-3 rounded-lg text-xs font-medium smooth-transition
             ${
               availableDates.has(format(today, 'yyyy-MM-dd'))
-                ? 'bg-gray-50 hover:bg-gray-100 text-gray-700 cursor-pointer'
+                ? 'bg-gray-50 hover:bg-gray-200 text-gray-700 cursor-pointer'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
             }
           `}
