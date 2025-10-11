@@ -8,7 +8,7 @@ This guide explains how to use the `upload-to-notion.mjs` script to import devot
 2. ✅ Environment variables configured in `.env.local`:
    - `NOTION_API_KEY`
    - `NOTION_DATABASE_ID`
-3. ✅ JSON file with parsed devotionals (e.g., `devotionals-2026-jan.json`)
+3. ✅ JSON file with parsed devotionals (e.g., `devotionals-2026.json`)
 
 ## Basic Usage
 
@@ -27,7 +27,7 @@ npm run upload:force     # Upload all, replacing existing pages
 node upload-to-notion.mjs [json-file] [options]
 ```
 
-If no file is specified, it defaults to `devotionals-2026-jan.json`.
+If no file is specified, it defaults to `devotionals-2026.json`.
 
 ## Examples
 
@@ -36,7 +36,7 @@ If no file is specified, it defaults to `devotionals-2026-jan.json`.
 Test the script to see what would be uploaded without actually creating pages:
 
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --dry-run
+node upload-to-notion.mjs devotionals-2026.json --dry-run
 ```
 
 This will:
@@ -49,7 +49,7 @@ This will:
 ### 2. Upload All Devotionals
 
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json
+node upload-to-notion.mjs devotionals-2026.json
 ```
 
 This uploads all devotionals in the file.
@@ -59,13 +59,13 @@ This uploads all devotionals in the file.
 Upload only devotionals 0-9 (first 10):
 
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --start 0 --end 10
+node upload-to-notion.mjs devotionals-2026.json --start 0 --end 10
 ```
 
 Upload devotionals 10-19:
 
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --start 10 --end 20
+node upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
 ```
 
 **Useful for:**
@@ -78,7 +78,7 @@ node upload-to-notion.mjs devotionals-2026-jan.json --start 10 --end 20
 Stop immediately if any upload fails:
 
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --stop-on-error
+node upload-to-notion.mjs devotionals-2026.json --stop-on-error
 ```
 
 By default, the script continues even if some uploads fail.
@@ -88,7 +88,7 @@ By default, the script continues even if some uploads fail.
 If pages already exist for some dates and you want to replace them:
 
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --force
+node upload-to-notion.mjs devotionals-2026.json --force
 ```
 
 Or with npm script:
@@ -112,13 +112,13 @@ npm run upload -- --force
 **Examples:**
 ```bash
 # Dry run
-node upload-to-notion.mjs devotionals-2026-jan.json --dry-run
+node upload-to-notion.mjs devotionals-2026.json --dry-run
 
 # Upload range with force override
-node upload-to-notion.mjs devotionals-2026-jan.json --start 0 --end 10 --force
+node upload-to-notion.mjs devotionals-2026.json --start 0 --end 10 --force
 
 # Stop on first error
-node upload-to-notion.mjs devotionals-2026-jan.json --stop-on-error
+node upload-to-notion.mjs devotionals-2026.json --stop-on-error
 ```
 
 ## Features
@@ -166,14 +166,14 @@ At the end, you get a summary:
 
 ### Step 1: Dry Run
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --dry-run
+node upload-to-notion.mjs devotionals-2026.json --dry-run
 ```
 
 Check that the JSON is valid and formatted correctly.
 
 ### Step 2: Test with Small Batch
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --start 0 --end 3
+node upload-to-notion.mjs devotionals-2026.json --start 0 --end 3
 ```
 
 Upload just 3 devotionals and check them in Notion to ensure everything looks right.
@@ -181,10 +181,10 @@ Upload just 3 devotionals and check them in Notion to ensure everything looks ri
 ### Step 3: Upload in Batches
 ```bash
 # Upload first 10
-node upload-to-notion.mjs devotionals-2026-jan.json --start 0 --end 10
+node upload-to-notion.mjs devotionals-2026.json --start 0 --end 10
 
 # Upload next 10
-node upload-to-notion.mjs devotionals-2026-jan.json --start 10 --end 20
+node upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
 
 # Continue...
 ```
@@ -192,7 +192,7 @@ node upload-to-notion.mjs devotionals-2026-jan.json --start 10 --end 20
 ### Step 4: Upload Remaining
 Once you're confident, upload the rest:
 ```bash
-node upload-to-notion.mjs devotionals-2026-jan.json --start 20
+node upload-to-notion.mjs devotionals-2026.json --start 20
 ```
 
 ## Troubleshooting
@@ -209,7 +209,7 @@ NOTION_DATABASE_ID=your_db_id_here
 
 Validate your JSON file:
 ```bash
-node -e "JSON.parse(require('fs').readFileSync('devotionals-2026-jan.json'))"
+node -e "JSON.parse(require('fs').readFileSync('devotionals-2026.json'))"
 ```
 
 ### Error: "Page already exists for date..."
@@ -269,12 +269,12 @@ After upload:
 The following scripts are already configured in `package.json`:
 
 ```bash
-npm run upload:dry-run   # Test without creating pages (devotionals-2026-jan.json)
+npm run upload:dry-run   # Test without creating pages (devotionals-2026.json)
 npm run upload:test      # Upload first 3 pages for testing
-npm run upload           # Upload all devotionals from devotionals-2026-jan.json
+npm run upload           # Upload all devotionals from devotionals-2026.json
 npm run upload:force     # Upload all, replacing any existing pages (use with caution!)
 npm run discover-schema  # Inspect your Notion database schema
 ```
 
-**Note:** All scripts expect `devotionals-2026-jan.json` to exist in the project root. The script will fail with a clear error message if the file is not found.
+**Note:** All scripts expect `devotionals-2026.json` to exist in the project root. The script will fail with a clear error message if the file is not found.
 

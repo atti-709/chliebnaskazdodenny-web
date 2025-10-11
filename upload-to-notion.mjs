@@ -398,7 +398,7 @@ async function uploadDevotionals(jsonFile, options = {}) {
     } catch (error) {
       console.error(`❌ Error: File not found: ${jsonFile}`)
       console.error('\nPlease ensure the JSON file exists before uploading.')
-      console.error('Expected file: devotionals-2026-jan.json')
+      console.error('Expected file: devotionals-2026.json')
       throw new Error(`File not found: ${jsonFile}`)
     }
     
@@ -460,7 +460,7 @@ async function uploadDevotionals(jsonFile, options = {}) {
 
 // Parse command line arguments
 const args = process.argv.slice(2)
-const jsonFile = args[0] || 'devotionals-2026-jan.json'
+const jsonFile = args[0] || 'devotionals-2026.json'
 
 const options = {
   dryRun: args.includes('--dry-run'),

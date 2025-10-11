@@ -25,14 +25,14 @@ Google Docs → HTML Export → Gemini AI → JSON → Notion Upload Script → 
 4. Attach the HTML file you exported
 5. Send and wait for Gemini to parse
 6. Copy the JSON response
-7. Save it as `devotionals-2026-jan.json` in the project root
+7. Save it as `devotionals-2026.json` in the project root
 
 **Important:** Make sure Gemini returns pure JSON without markdown code blocks. If it includes \`\`\`json, remove those markers.
 
 ### Step 3: Validate the JSON
 
 ```bash
-node -e "JSON.parse(require('fs').readFileSync('devotionals-2026-jan.json'))"
+node -e "JSON.parse(require('fs').readFileSync('devotionals-2026.json'))"
 ```
 
 If no errors, your JSON is valid! ✅
@@ -76,10 +76,10 @@ Or in batches for safety (using direct command):
 
 ```bash
 # First 10
-node upload-to-notion.mjs devotionals-2026-jan.json --start 0 --end 10
+node upload-to-notion.mjs devotionals-2026.json --start 0 --end 10
 
 # Next 10
-node upload-to-notion.mjs devotionals-2026-jan.json --start 10 --end 20
+node upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
 
 # Continue...
 ```
@@ -169,7 +169,7 @@ GEMINI_API_KEY=your_key_here
 
 ```bash
 # January
-node upload-to-notion.mjs devotionals-2026-jan.json
+node upload-to-notion.mjs devotionals-2026.json
 
 # February  
 node upload-to-notion.mjs devotionals-2026-feb.json

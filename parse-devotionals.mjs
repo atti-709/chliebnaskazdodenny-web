@@ -90,7 +90,7 @@ Return the parsed JSON array:`
 
 // Run the parser
 const inputFile = process.argv[2] || 'CHLIEB 2026 JAN.txt'
-const outputFile = process.argv[3] || 'devotionals-2026-jan.json'
+const outputFile = process.argv[3] || 'devotionals-2026.json'
 
 parseDevotionals(inputFile, outputFile)
   .then(devotionals => {
