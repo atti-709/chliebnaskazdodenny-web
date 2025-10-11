@@ -1,8 +1,8 @@
 // Serverless API Route for Notion Integration
 // This handles Notion API calls server-side
 
-const { Client } = require('@notionhq/client')
-const { convertNotionPageToDevotional } = require('../src/utils/notion.js')
+import { Client } from '@notionhq/client'
+import { convertNotionPageToDevotional } from '../src/utils/notion.js'
 
 const notion = new Client({
   auth: process.env.VITE_NOTION_API_KEY,
@@ -19,14 +19,28 @@ const fetchAndConvertPage = async page => {
   return convertNotionPageToDevotional(page, blocks)
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     res.status(200).end()
+    return
+  }
+
+  // Only allow GET requests
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' })
+    return
+  }
+
+  // Verify environment variables are set
+  if (!process.env.VITE_NOTION_API_KEY || !process.env.VITE_NOTION_DATABASE_ID) {
+    console.error('Missing required environment variables')
+    res.status(500).json({ error: 'Server configuration error' })
     return
   }
 
@@ -35,6 +49,12 @@ module.exports = async function handler(req, res) {
 
     // Get devotional by date
     if (action === 'getByDate' && date) {
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' })
+        return
+      }
+
       const response = await notion.databases.query({
         database_id: DATABASE_ID,
         filter: {
@@ -51,6 +71,9 @@ module.exports = async function handler(req, res) {
       }
 
       const devotional = await fetchAndConvertPage(response.results[0])
+      
+      // Cache for 1 hour (devotionals don't change frequently)
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
       res.status(200).json(devotional)
       return
     }
@@ -58,6 +81,12 @@ module.exports = async function handler(req, res) {
     // Get all devotionals
     if (action === 'getAll') {
       const limit = parseInt(req.query.limit || '100')
+
+      // Validate limit
+      if (isNaN(limit) || limit < 1 || limit > 100) {
+        res.status(400).json({ error: 'Invalid limit. Must be between 1 and 100' })
+        return
+      }
 
       const response = await notion.databases.query({
         database_id: DATABASE_ID,
@@ -76,6 +105,8 @@ module.exports = async function handler(req, res) {
         devotionals.push(devotional)
       }
 
+      // Cache for 30 minutes (list changes more frequently)
+      res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate')
       res.status(200).json(devotionals)
       return
     }
@@ -99,13 +130,24 @@ module.exports = async function handler(req, res) {
         })
         .filter(Boolean)
 
+      // Cache for 1 hour (dates don't change frequently)
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
       res.status(200).json(dates)
       return
     }
 
-    res.status(400).json({ error: 'Invalid action' })
+    // Invalid action
+    res.status(400).json({ 
+      error: 'Invalid action. Valid actions are: getByDate, getAll, getDates' 
+    })
   } catch (error) {
     console.error('Notion API error:', error)
-    res.status(500).json({ error: error.message || 'Internal server error' })
+    
+    // Don't expose sensitive error details in production
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? error.message 
+      : 'Internal server error'
+    
+    res.status(500).json({ error: errorMessage })
   }
 }
