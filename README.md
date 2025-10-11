@@ -16,7 +16,7 @@ A beautiful, minimalistic devotional web application for daily spiritual reading
 - **Frontend**: React 18 with Vite
 - **Styling**: Tailwind CSS
 - **Date Handling**: date-fns
-- **CMS**: Strapi with blocks renderer
+- **Backend**: Notion API
 - **Code Quality**: ESLint + Prettier
 
 ## Getting Started
@@ -27,17 +27,27 @@ A beautiful, minimalistic devotional web application for daily spiritual reading
 
 ### Installation
 
-1. Install dependencies (use --ignore-scripts to avoid postinstall errors):
+1. Install dependencies:
+
 ```bash
-npm install --ignore-scripts
+npm install
 ```
 
-2. Start the development server:
+2. Set up your environment variables (see [NOTION_SETUP.md](./NOTION_SETUP.md)):
+
+```bash
+# Create .env.local file
+VITE_NOTION_API_KEY=your_notion_api_key_here
+VITE_NOTION_DATABASE_ID=your_notion_database_id_here
+```
+
+3. Start the development server:
+
 ```bash
 npm run dev
 ```
 
-3. Open your browser to `http://localhost:5173`
+4. Open your browser to `http://localhost:5173`
 
 ### Available Commands
 
@@ -58,26 +68,24 @@ npm run build
 
 The built files will be in the `dist` directory, ready for deployment.
 
-## Strapi CMS Integration
+## Notion Integration
 
-The application is ready to integrate with Strapi headless CMS. Follow the detailed setup guide in [STRAPI_SETUP_GUIDE.md](./STRAPI_SETUP_GUIDE.md).
+The application uses Notion as a backend database. Follow the detailed setup guide in [NOTION_SETUP.md](./NOTION_SETUP.md).
 
 ### Quick Start
 
-1. **Set up Strapi** (see [STRAPI_SETUP_GUIDE.md](./STRAPI_SETUP_GUIDE.md))
-   - Use Strapi Cloud (easiest) or run locally
-   - Create the Devotional content type
-   - Add test content
+1. **Set up Notion** (see [NOTION_SETUP.md](./NOTION_SETUP.md))
+   - Create a Notion integration
+   - Create a database with the required properties
+   - Share the database with your integration
 
 2. **Configure the app**:
-   ```bash
-   cp .env.local.example .env.local
-   ```
-   
-   Edit `.env.local`:
+
+   Create `.env.local` file:
+
    ```env
-   VITE_STRAPI_API_URL=https://your-project-name.strapiapp.com/api
-   VITE_STRAPI_API_TOKEN=your_api_token_here
+   VITE_NOTION_API_KEY=your_notion_api_key_here
+   VITE_NOTION_DATABASE_ID=your_notion_database_id_here
    ```
 
 3. **Restart the dev server**:
@@ -85,29 +93,28 @@ The application is ready to integrate with Strapi headless CMS. Follow the detai
    npm run dev
    ```
 
-The app will now fetch devotionals from your Strapi CMS!
+The app will now fetch devotionals from your Notion database!
 
-### Content Model
+### Database Schema
 
-The required content model is:
+The required Notion database properties are:
 
-### Devotional Episode Content Type
+| Property Name     | Type      | Description                             |
+| ----------------- | --------- | --------------------------------------- |
+| Title             | Title     | The devotional title                    |
+| Date              | Date      | The devotional date (YYYY-MM-DD format) |
+| Quote             | Rich text | The quote reference                     |
+| Spotify Embed URI | URL       | The Spotify embed URI                   |
 
-| Field Name      | Type       | Description                           | Required |
-| --------------- | ---------- | ------------------------------------- | -------- |
-| date            | Date       | The day this devotional is published  | Yes      |
-| title           | Short Text | The title of the day's devotional     | Yes      |
-| scripture       | Short Text | The main scripture verse reference    | Yes      |
-| text            | Rich Text  | The full body text (HTML supported)   | Yes      |
-| spotifyEmbedUri | URL        | The Spotify embed URL for the episode | Yes      |
+The devotional content should be written in the page content area using Notion blocks.
 
 ### Authentication
 
-The app uses Strapi API tokens for secure authentication:
+The app uses Notion API for secure authentication:
 
-- **API Token**: Created in Strapi admin panel (Settings → API Tokens)
-- **Read-only access**: Use "Read-only" token type for security
-- **No public exposure**: Token is only used server-side during build/fetch
+- **API Token**: Created in Notion integrations page
+- **Read-only access**: Integration only needs read access to the database
+- **No public exposure**: Token is only used in API calls from the frontend
 
 ## Deployment
 
@@ -122,13 +129,18 @@ The application can be deployed to any static hosting service:
 ```
 chliebnaskazdodenny-web/
 ├── src/
-│   ├── App.jsx          # Main application component
-│   ├── main.jsx         # React entry point
-│   └── index.css        # Global styles and Tailwind
-├── index.html           # HTML template
-├── package.json         # Dependencies
-├── vite.config.js       # Vite configuration
-└── tailwind.config.js   # Tailwind configuration
+│   ├── api/
+│   │   ├── notion.ts          # Notion API client
+│   │   └── notion.types.ts    # TypeScript types for Notion
+│   ├── components/
+│   │   └── NotionBlocksRenderer.tsx  # Notion blocks renderer
+│   ├── App.jsx                # Main application component
+│   ├── main.jsx               # React entry point
+│   └── index.css              # Global styles and Tailwind
+├── index.html                 # HTML template
+├── package.json               # Dependencies
+├── vite.config.js             # Vite configuration
+└── tailwind.config.js         # Tailwind configuration
 ```
 
 ## Design Philosophy
@@ -147,4 +159,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 © 2025 Chlieb náš každodenný. All rights reserved.
-
