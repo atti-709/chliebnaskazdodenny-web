@@ -2,6 +2,7 @@
 // This handles Notion API calls server-side
 
 const { Client } = require('@notionhq/client')
+const { convertNotionPageToDevotional } = require('../src/utils/notion.js')
 
 const notion = new Client({
   auth: process.env.VITE_NOTION_API_KEY,
@@ -9,43 +10,13 @@ const notion = new Client({
 
 const DATABASE_ID = process.env.VITE_NOTION_DATABASE_ID
 
-// Converts Notion rich text to plain text
-const richTextToPlainText = (richText) => {
-  return richText ? richText.map(text => text.plain_text).join('') : ''
-}
-
-// Converts Notion page to Devotional format
-const convertNotionPageToDevotional = async (page) => {
-  const properties = page.properties
-  
-  // Extract title
-  const title = richTextToPlainText(properties.Title?.title || properties.title?.title)
-  
-  // Extract date
-  const date = properties.Date?.date?.start || properties.date?.date?.start || ''
-  
-  // Extract scripture
-  const scripture = richTextToPlainText(properties.Scripture?.rich_text || properties.scripture?.rich_text)
-  
-  // Extract Spotify embed URI (URL type)
-  const spotifyEmbedUri = properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
-  
-  // Fetch page content (blocks)
+// Fetches blocks for a page and converts to devotional format
+const fetchAndConvertPage = async page => {
   const { results: blocks } = await notion.blocks.children.list({
     block_id: page.id,
   })
-  
-  return {
-    id: page.id,
-    title,
-    date: date.split('T')[0], // Extract just the date part
-    scripture,
-    text: blocks,
-    spotifyEmbedUri,
-    createdAt: page.created_time,
-    updatedAt: page.last_edited_time,
-    url: page.url,
-  }
+
+  return convertNotionPageToDevotional(page, blocks)
 }
 
 module.exports = async function handler(req, res) {
@@ -53,7 +24,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  
+
   if (req.method === 'OPTIONS') {
     res.status(200).end()
     return
@@ -79,7 +50,7 @@ module.exports = async function handler(req, res) {
         return
       }
 
-      const devotional = await convertNotionPageToDevotional(response.results[0])
+      const devotional = await fetchAndConvertPage(response.results[0])
       res.status(200).json(devotional)
       return
     }
@@ -87,7 +58,7 @@ module.exports = async function handler(req, res) {
     // Get all devotionals
     if (action === 'getAll') {
       const limit = parseInt(req.query.limit || '100')
-      
+
       const response = await notion.databases.query({
         database_id: DATABASE_ID,
         sorts: [
@@ -101,7 +72,7 @@ module.exports = async function handler(req, res) {
 
       const devotionals = []
       for (const page of response.results) {
-        const devotional = await convertNotionPageToDevotional(page)
+        const devotional = await fetchAndConvertPage(page)
         devotionals.push(devotional)
       }
 

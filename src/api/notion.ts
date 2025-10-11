@@ -5,9 +5,7 @@
  */
 
 import type { Devotional } from './notion.types'
-
-// API endpoint - will be handled by Vercel/Netlify serverless functions
-const API_ENDPOINT = '/api/devotionals'
+import { API_ENDPOINT, DEFAULT_DEVOTIONALS_LIMIT } from '../utils/constants'
 
 /**
  * Fetches a devotional by date from Notion
@@ -34,7 +32,9 @@ export const getDevotionalByDate = async (dateString: string): Promise<Devotiona
 /**
  * Fetches all devotionals from Notion
  */
-export const getAllDevotionals = async (limit = 100): Promise<Devotional[]> => {
+export const getAllDevotionals = async (
+  limit = DEFAULT_DEVOTIONALS_LIMIT
+): Promise<Devotional[]> => {
   try {
     const response = await fetch(`${API_ENDPOINT}?action=getAll&limit=${limit}`)
 

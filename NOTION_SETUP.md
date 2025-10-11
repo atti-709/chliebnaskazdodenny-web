@@ -46,6 +46,7 @@ VITE_NOTION_DATABASE_ID=your_notion_database_id_here
 ```
 
 **Important for Deployment:**
+
 - On Vercel/Netlify, add these environment variables in your project settings
 - Make sure to set them as "Production" and "Preview" environment variables
 - Do NOT commit the `.env.local` file to your repository
@@ -81,4 +82,3 @@ If you're migrating from Strapi, you'll need to:
 2. Create corresponding pages in your Notion database
 3. Copy the content from Strapi's rich text format to Notion's block format
 4. Update the environment variables as described above
-

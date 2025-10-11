@@ -33,34 +33,37 @@ function getNotionClient() {
 /**
  * Converts Notion rich text to plain text
  */
-const richTextToPlainText = (richText) => {
+const richTextToPlainText = richText => {
   return richText ? richText.map(text => text.plain_text).join('') : ''
 }
 
 /**
  * Converts Notion page to Devotional format
  */
-const convertNotionPageToDevotional = async (page) => {
+const convertNotionPageToDevotional = async page => {
   const { notion } = getNotionClient()
   const properties = page.properties
-  
+
   // Extract title
   const title = richTextToPlainText(properties.Title?.title || properties.title?.title)
-  
+
   // Extract date
   const date = properties.Date?.date?.start || properties.date?.date?.start || ''
-  
+
   // Extract scripture
-  const scripture = richTextToPlainText(properties.Scripture?.rich_text || properties.scripture?.rich_text)
-  
+  const scripture = richTextToPlainText(
+    properties.Scripture?.rich_text || properties.scripture?.rich_text
+  )
+
   // Extract Spotify embed URI (URL type)
-  const spotifyEmbedUri = properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
-  
+  const spotifyEmbedUri =
+    properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
+
   // Fetch page content (blocks)
   const { results: blocks } = await notion.blocks.children.list({
     block_id: page.id,
   })
-  
+
   return {
     id: page.id,
     title,
@@ -84,12 +87,12 @@ export function notionApiPlugin() {
       console.log('✅ Notion API plugin loaded')
       console.log('📡 Database ID:', process.env.VITE_NOTION_DATABASE_ID ? 'Set' : 'MISSING')
       console.log('🔑 API Key:', process.env.VITE_NOTION_API_KEY ? 'Set' : 'MISSING')
-      
+
       server.middlewares.use(async (req, res, next) => {
         if (!req.url.startsWith('/api/devotionals')) {
           return next()
         }
-        
+
         console.log('🔍 API request:', req.url)
 
         // Parse query params
@@ -100,7 +103,7 @@ export function notionApiPlugin() {
 
         try {
           const { notion, DATABASE_ID } = getNotionClient()
-          
+
           // Get devotional by date
           if (action === 'getByDate' && date) {
             const response = await notion.databases.query({

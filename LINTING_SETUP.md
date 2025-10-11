@@ -5,16 +5,19 @@ Your project now has ESLint and Prettier configured for code quality and consist
 ## ✅ What's Been Set Up
 
 ### 1. **ESLint** - Code Quality Linter
+
 - Catches bugs and code quality issues
 - Enforces React best practices
 - React Hooks rules
 - React Refresh rules for Vite
 
 ### 2. **Prettier** - Code Formatter
+
 - Automatic code formatting
 - Consistent code style across the project
 
 ### 3. **VS Code Integration**
+
 - Auto-format on save
 - Auto-fix ESLint issues on save
 - Recommended extensions
@@ -30,16 +33,19 @@ npm install --ignore-scripts
 ## 🚀 Available Commands
 
 ### Lint your code
+
 ```bash
 npm run lint
 ```
 
 ### Auto-fix linting issues
+
 ```bash
 npm run lint:fix
 ```
 
 ### Format code with Prettier
+
 ```bash
 npm run format
 ```
@@ -80,17 +86,21 @@ The following extensions are recommended (VS Code will prompt you to install the
 ## 🛠️ Troubleshooting
 
 ### Postinstall Script Error
+
 If you see an error about `husky` during install:
+
 ```bash
 npm install --ignore-scripts
 ```
 
 ### ESLint Not Working in VS Code
+
 1. Reload VS Code window (Cmd+Shift+P → "Reload Window")
 2. Make sure ESLint extension is installed
 3. Check VS Code Output panel → ESLint for errors
 
 ### Prettier Not Formatting
+
 1. Make sure Prettier is set as default formatter
 2. Check "Format on Save" is enabled in settings
 3. Right-click in file → "Format Document With..." → Choose Prettier
@@ -98,7 +108,9 @@ npm install --ignore-scripts
 ## ⚙️ Customization
 
 ### Modify ESLint Rules
+
 Edit `.eslintrc.cjs` and add/modify rules:
+
 ```js
 rules: {
   'rule-name': 'off', // Disable
@@ -108,7 +120,9 @@ rules: {
 ```
 
 ### Modify Prettier Rules
+
 Edit `.prettierrc`:
+
 ```json
 {
   "semi": true,
@@ -119,11 +133,13 @@ Edit `.prettierrc`:
 ## 🎯 Best Practices
 
 1. **Run linter before committing**
+
    ```bash
    npm run lint:fix
    ```
 
 2. **Format code regularly**
+
    ```bash
    npm run format
    ```
@@ -137,4 +153,3 @@ Edit `.prettierrc`:
 - [ESLint Documentation](https://eslint.org/docs/latest/)
 - [Prettier Documentation](https://prettier.io/docs/en/)
 - [React ESLint Plugin](https://github.com/jsx-eslint/eslint-plugin-react)
-

@@ -1,9 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_STRAPI_API_URL?: string
-  readonly VITE_STRAPI_API_TOKEN?: string
-  readonly VITE_USE_STRAPI?: string
+  readonly VITE_NOTION_API_KEY: string
+  readonly VITE_NOTION_DATABASE_ID: string
 }
 
 interface ImportMeta {

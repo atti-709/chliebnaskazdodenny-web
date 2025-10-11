@@ -28,11 +28,13 @@ A beautiful, minimalistic devotional web application for daily spiritual reading
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Set up your environment variables (see [NOTION_SETUP.md](./NOTION_SETUP.md)):
+
 ```bash
 # Create .env.local file
 VITE_NOTION_API_KEY=your_notion_api_key_here
@@ -40,6 +42,7 @@ VITE_NOTION_DATABASE_ID=your_notion_database_id_here
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -77,8 +80,9 @@ The application uses Notion as a backend database. Follow the detailed setup gui
    - Share the database with your integration
 
 2. **Configure the app**:
-   
+
    Create `.env.local` file:
+
    ```env
    VITE_NOTION_API_KEY=your_notion_api_key_here
    VITE_NOTION_DATABASE_ID=your_notion_database_id_here
@@ -155,4 +159,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 © 2025 Chlieb náš každodenný. All rights reserved.
-

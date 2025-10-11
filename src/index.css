@@ -4,17 +4,21 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #F9F9F9;
+  background-color: #f9f9f9;
 }
 
 @layer utilities {
   .smooth-transition {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .fade-in {
     animation: fadeIn 0.5s ease-in;
   }
@@ -30,4 +34,3 @@ body {
     transform: translateY(0);
   }
 }
-

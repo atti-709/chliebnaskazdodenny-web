@@ -11,6 +11,7 @@ cat .env.local
 ```
 
 You should see:
+
 ```
 VITE_NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 VITE_NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -40,6 +41,7 @@ Open your browser to `http://localhost:5173` and:
 **Cause**: The Notion SDK was being used directly in the browser, which doesn't work.
 
 **Solution**: ✅ Fixed! Now using serverless architecture:
+
 - Frontend calls `/api/devotionals`
 - Vite plugin (local) or serverless function (prod) handles Notion API calls
 
@@ -48,6 +50,7 @@ Open your browser to `http://localhost:5173` and:
 **Cause**: The API file was using ES6 `import` instead of CommonJS `require`.
 
 **Solution**: ✅ Fixed! Changed to CommonJS format:
+
 ```javascript
 const { Client } = require('@notionhq/client')
 module.exports = async function handler(req, res) { ... }
@@ -56,10 +59,12 @@ module.exports = async function handler(req, res) { ... }
 ### Issue: 404 errors on API calls
 
 **Possible causes:**
+
 1. Vite dev server not routing `/api/*` correctly
 2. Environment variables not loaded
 
 **Solutions:**
+
 - Check that `server.js` is being loaded in `vite.config.js`
 - Verify `.env.local` exists and has correct values
 - Restart the dev server
@@ -67,11 +72,13 @@ module.exports = async function handler(req, res) { ... }
 ### Issue: Empty devotional or null response
 
 **Possible causes:**
+
 1. No devotional exists for the selected date in Notion
 2. Database property names don't match expected names
 3. Database not shared with integration
 
 **Solutions:**
+
 1. Check your Notion database has entries for today's date
 2. Verify property names (case-sensitive):
    - `Title` or `title`
@@ -97,16 +104,19 @@ module.exports = async function handler(req, res) { ... }
 Your frontend calls these endpoints:
 
 ### Get Devotional by Date
+
 ```
 GET /api/devotionals?action=getByDate&date=2025-10-11
 ```
 
 ### Get All Devotionals
+
 ```
 GET /api/devotionals?action=getAll&limit=100
 ```
 
 ### Get Available Dates
+
 ```
 GET /api/devotionals?action=getDates
 ```
@@ -131,16 +141,18 @@ const { Client } = require('@notionhq/client')
 
 const notion = new Client({ auth: 'your_key_here' })
 
-notion.databases.query({
-  database_id: 'your_db_id_here',
-})
-.then(response => console.log('Success!', response.results.length, 'pages'))
-.catch(error => console.error('Error:', error))
+notion.databases
+  .query({
+    database_id: 'your_db_id_here',
+  })
+  .then(response => console.log('Success!', response.results.length, 'pages'))
+  .catch(error => console.error('Error:', error))
 ```
 
 ### Network Tab
 
 Open browser DevTools → Network tab:
+
 1. Filter by "Fetch/XHR"
 2. Look for calls to `/api/devotionals`
 3. Check the response status and data
@@ -150,6 +162,7 @@ Open browser DevTools → Network tab:
 Once everything works locally:
 
 1. **Commit your changes**:
+
    ```bash
    git add .
    git commit -m "Migrated from Strapi to Notion"

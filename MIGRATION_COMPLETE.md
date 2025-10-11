@@ -34,6 +34,7 @@ The application has been successfully migrated from Strapi CMS to Notion as the 
 ## Files Modified
 
 ### New Files:
+
 - `src/api/notion.ts` - Notion API client (frontend)
 - `src/api/notion.types.ts` - TypeScript types for Notion
 - `src/components/NotionBlocksRenderer.tsx` - Custom block renderer
@@ -43,6 +44,7 @@ The application has been successfully migrated from Strapi CMS to Notion as the 
 - `MIGRATION_COMPLETE.md` - This file
 
 ### Updated Files:
+
 - `src/App.jsx` - Updated imports to use Notion API
 - `package.json` - Removed Strapi dependencies, added Notion
 - `vite.config.js` - Added Vite plugin for local dev
@@ -51,6 +53,7 @@ The application has been successfully migrated from Strapi CMS to Notion as the 
 - `README.md` - Updated documentation
 
 ### Deleted Files:
+
 - `src/api/strapi.ts` ❌
 - `src/api/strapi.types.ts` ❌
 - `src/api/strapi-schema.ts` ❌
@@ -89,12 +92,14 @@ Visit `http://localhost:5173` and verify the devotionals load correctly.
 ### 4. Deploy
 
 **For Vercel:**
+
 1. Push your code to GitHub
 2. Import the project in Vercel
 3. Add environment variables in Vercel project settings
 4. Deploy!
 
 **For Netlify:**
+
 1. Push your code to GitHub
 2. Import the project in Netlify
 3. Add environment variables in Netlify site settings
@@ -106,26 +111,29 @@ Your Notion database **must** have these properties:
 
 | Property Name     | Type      | Required |
 | ----------------- | --------- | -------- |
-| Title             | Title     | ✅        |
-| Date              | Date      | ✅        |
-| Scripture         | Rich text | ✅        |
-| Spotify Embed URI | URL       | ✅        |
+| Title             | Title     | ✅       |
+| Date              | Date      | ✅       |
+| Scripture         | Rich text | ✅       |
+| Spotify Embed URI | URL       | ✅       |
 
 The devotional content should be written in the page content area.
 
 ## Troubleshooting
 
 ### "Notion API error" in console
+
 - Check that your environment variables are set correctly
 - Verify the Notion integration has access to the database
 - Ensure the database properties match the expected names
 
 ### 404 errors on deployed site
+
 - For Vercel: Ensure the `api/` folder is committed to git
 - For Netlify: Ensure `netlify.toml` is committed
 - Check that environment variables are set in deployment platform
 
 ### Build fails
+
 - Run `npm install` to ensure all dependencies are installed
 - Check that `.env.local` exists (for local dev)
 - Verify Node.js version is 16 or higher
@@ -133,6 +141,7 @@ The devotional content should be written in the page content area.
 ## Support
 
 For issues:
+
 1. Check [NOTION_SETUP.md](./NOTION_SETUP.md) for setup instructions
 2. Review the Notion API documentation: https://developers.notion.com/
 3. Verify your database schema matches the requirements
@@ -144,6 +153,6 @@ For issues:
 ✅ **API Layer**: Added serverless functions  
 ✅ **Block Rendering**: Custom React component  
 ✅ **Documentation**: Updated all guides  
-✅ **Configuration**: Updated deploy configs  
+✅ **Configuration**: Updated deploy configs
 
 Migration complete! 🎉
