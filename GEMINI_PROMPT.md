@@ -53,9 +53,11 @@ Parse ALL devotionals in the file and return a JSON array with this exact struct
   - "Piatok 2. januára 2026" → "2026-01-02"
   - etc.
 - Keep all Slovak text exactly as written
-- **Use actual characters, NOT Unicode escape sequences:**
-  - Use `…` not `\u2026` for ellipsis
-  - Use actual quotation marks `"` not `\u201C` or `\u201D`
+- **Use actual characters, NOT Unicode escape sequences or HTML entities:**
+  - Use `…` not `\u2026` or `&hellip;` for ellipsis
+  - Use actual quotation marks `"` not `\u201C` or `&ldquo;` or `&rdquo;`
+  - Use actual Slovak characters: `á é í ó ú ý ä ô ň č š ž ľ ť ď ŕ` 
+  - **NEVER use HTML entities** like `&aacute;` `&iacute;` `&eacute;` etc.
   - Use actual characters for all special symbols
 - **Title formatting:**
   - The `title` field should be PLAIN TEXT without any Markdown formatting

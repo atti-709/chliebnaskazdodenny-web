@@ -15,6 +15,86 @@ if (!NOTION_API_KEY || !DATABASE_ID) {
 const notion = new Client({ auth: NOTION_API_KEY })
 
 /**
+ * Decodes HTML entities to actual characters
+ * Safety fallback in case source data contains HTML entities
+ */
+function decodeHTMLEntities(text) {
+  if (!text) return ''
+  
+  const entities = {
+    '&aacute;': 'á',
+    '&eacute;': 'é',
+    '&iacute;': 'í',
+    '&oacute;': 'ó',
+    '&uacute;': 'ú',
+    '&yacute;': 'ý',
+    '&Aacute;': 'Á',
+    '&Eacute;': 'É',
+    '&Iacute;': 'Í',
+    '&Oacute;': 'Ó',
+    '&Uacute;': 'Ú',
+    '&Yacute;': 'Ý',
+    '&acirc;': 'â',
+    '&ecirc;': 'ê',
+    '&icirc;': 'î',
+    '&ocirc;': 'ô',
+    '&ucirc;': 'û',
+    '&auml;': 'ä',
+    '&euml;': 'ë',
+    '&iuml;': 'ï',
+    '&ouml;': 'ö',
+    '&uuml;': 'ü',
+    '&Auml;': 'Ä',
+    '&Ouml;': 'Ö',
+    '&Uuml;': 'Ü',
+    '&agrave;': 'à',
+    '&egrave;': 'è',
+    '&igrave;': 'ì',
+    '&ograve;': 'ò',
+    '&ugrave;': 'ù',
+    '&atilde;': 'ã',
+    '&ntilde;': 'ñ',
+    '&otilde;': 'õ',
+    '&ccedil;': 'ç',
+    '&Ccedil;': 'Ç',
+    '&scaron;': 'š',
+    '&Scaron;': 'Š',
+    '&zcaron;': 'ž',
+    '&Zcaron;': 'Ž',
+    '&ccaron;': 'č',
+    '&Ccaron;': 'Č',
+    '&ncaron;': 'ň',
+    '&Ncaron;': 'Ň',
+    '&dcaron;': 'ď',
+    '&Dcaron;': 'Ď',
+    '&tcaron;': 'ť',
+    '&Tcaron;': 'Ť',
+    '&lacute;': 'ľ',
+    '&Lacute;': 'Ľ',
+    '&racute;': 'ŕ',
+    '&Racute;': 'Ŕ',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&#39;': "'",
+    '&nbsp;': ' ',
+    '&ldquo;': '"',
+    '&rdquo;': '"',
+    '&lsquo;': '\u2018',
+    '&rsquo;': '\u2019',
+    '&ndash;': '–',
+    '&mdash;': '—',
+    '&hellip;': '…',
+  }
+  
+  return text.replace(/&[a-zA-Z0-9#]+;/g, (entity) => {
+    return entities[entity] || entity
+  })
+}
+
+/**
  * Unescapes Unicode sequences and converts them to actual characters
  */
 function unescapeUnicode(text) {
@@ -32,7 +112,10 @@ function unescapeUnicode(text) {
 function stripMarkdown(text) {
   if (!text) return ''
   
-  // Unescape Unicode first
+  // Decode HTML entities first (safety fallback)
+  text = decodeHTMLEntities(text)
+  
+  // Unescape Unicode
   text = unescapeUnicode(text)
   
   // Remove bold (**text**)
@@ -51,7 +134,10 @@ function stripMarkdown(text) {
 function markdownToRichText(text) {
   if (!text) return []
   
-  // Unescape Unicode first
+  // Decode HTML entities first (safety fallback)
+  text = decodeHTMLEntities(text)
+  
+  // Unescape Unicode
   text = unescapeUnicode(text)
   
   const richText = []
