@@ -15,7 +15,7 @@
     "upload:dry-run": "node upload-to-notion.mjs devotionals-2026.json --dry-run",
     "upload:test": "node upload-to-notion.mjs devotionals-2026.json --start 0 --end 3",
     "upload": "node upload-to-notion.mjs devotionals-2026.json",
-    "upload:force": "node upload-to-notion.mjs devotionals-2026.json --force",
+    "upload:force": "node upload-to-notion.mjs devotionals-2026-dec.json --force",
     "discover-schema": "node discover-schema.mjs"
   },
   "dependencies": {
