@@ -4,11 +4,12 @@ Parse this Slovak devotional HTML file into a JSON array. The HTML preserves ric
 2. **Two Bible references** separated by spaces (e.g., "Jn 16,31-33        Ž 121")
    - First reference = verseDay
    - Second reference = verseEvening
-3. **Title** (one or more lines before the quote, may have formatting)
-4. **Quote** - The full inspirational quote with Bible reference in parentheses at the end (e.g., "... Na svete máte súženie, ale dúfajte, ja som premohol svet!" (Jn 16,33))
-5. **Main content** (multiple paragraphs of devotional text, may contain bold/italic formatting)
-6. **Prayer** (usually starts with "Ďakujem Ti," "Drahý Bože," "Milujúci Bože," "Nebeský Otče," "Láskavý Bože," etc.)
-7. **Questions section** starting with "Na zamyslenie:"
+3. **Optional holiday line** (e.g., "Nový rok", "adventná nedeľa") - if present, this appears above the title and should be EXCLUDED from the title
+4. **Title** (one or more lines before the quote, may have formatting)
+5. **Quote** - The full inspirational quote with Bible reference in parentheses at the end (e.g., "... Na svete máte súženie, ale dúfajte, ja som premohol svet!" (Jn 16,33))
+6. **Main content** (multiple paragraphs of devotional text, may contain bold/italic formatting)
+7. **Prayer** (usually starts with "Ďakujem Ti," "Drahý Bože," "Milujúci Bože," "Nebeský Otče," "Láskavý Bože," etc.)
+8. **Questions section** starting with "Na zamyslenie:"
 
 **Note on formatting:** The HTML contains rich text formatting (bold, italic, etc.). **Preserve this formatting** in the JSON by converting HTML tags to Markdown:
 - `<b>` or `<strong>` → `**text**` (bold)
@@ -37,6 +38,9 @@ Parse ALL devotionals in the file and return a JSON array with this exact struct
   - "Štvrtok 1. januára 2026" → "2026-01-01"
   - "Piatok 2. januára 2026" → "2026-01-02"
   - etc.
+- **Handle hyphenated words:** Since the text is from a printed publication, some words are divided at the end of lines with hyphens. Join these word parts together and remove the hyphens to form complete words.
+  - Example: "pre-\nmohol" should become "premohol"
+- **Exclude holiday names:** If a holiday name (e.g., "Nový rok", "adventná nedeľa", etc.) appears on a separate line above the title, do NOT include it in the title field
 - Keep all Slovak text exactly as written
 - **Use actual characters, NOT Unicode escape sequences or HTML entities:**
   - Use `…` not `\u2026` or `&hellip;` for ellipsis

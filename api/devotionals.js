@@ -204,22 +204,34 @@ export default async function handler(req, res) {
 
     // Get available dates
     if (action === 'getDates') {
-      const response = await notionRequest(
-        `/databases/${DATABASE_ID}/query`,
-        NOTION_API_KEY,
-        {
-          body: {
-            sorts: [
-              {
-                property: 'Date',
-                direction: 'descending',
-              },
-            ],
-          },
-        }
-      )
+      let allResults = []
+      let hasMore = true
+      let startCursor = undefined
 
-      const dates = response.results
+      // Fetch all pages with pagination
+      while (hasMore) {
+        const response = await notionRequest(
+          `/databases/${DATABASE_ID}/query`,
+          NOTION_API_KEY,
+          {
+            body: {
+              sorts: [
+                {
+                  property: 'Date',
+                  direction: 'descending',
+                },
+              ],
+              start_cursor: startCursor,
+            },
+          }
+        )
+
+        allResults = allResults.concat(response.results)
+        hasMore = response.has_more
+        startCursor = response.next_cursor
+      }
+
+      const dates = allResults
         .map(page => {
           const date = page.properties.Date?.date?.start || page.properties.date?.date?.start
           return date ? date.split('T')[0] : null
