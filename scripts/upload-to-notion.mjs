@@ -1,7 +1,12 @@
 import fs from 'fs/promises'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 
-dotenv.config({ path: '.env.local' })
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') })
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY
 const DATABASE_ID = process.env.NOTION_DATABASE_ID
@@ -392,18 +397,23 @@ async function createDevotionalPage(devotional, options = {}) {
  */
 async function uploadDevotionals(jsonFile, options = {}) {
   try {
+    // Resolve file path relative to assets directory if not absolute
+    const filePath = path.isAbsolute(jsonFile) 
+      ? jsonFile 
+      : path.join(__dirname, 'assets', jsonFile)
+    
     // Check if file exists
     try {
-      await fs.access(jsonFile)
+      await fs.access(filePath)
     } catch (error) {
-      console.error(`❌ Error: File not found: ${jsonFile}`)
-      console.error('\nPlease ensure the JSON file exists before uploading.')
-      console.error('Expected file: devotionals-2026.json')
-      throw new Error(`File not found: ${jsonFile}`)
+      console.error(`❌ Error: File not found: ${filePath}`)
+      console.error('\nPlease ensure the JSON file exists in scripts/assets/')
+      console.error('Expected file: scripts/assets/devotionals-2026.json')
+      throw new Error(`File not found: ${filePath}`)
     }
     
-    console.log('📖 Reading JSON file:', jsonFile)
-    const content = await fs.readFile(jsonFile, 'utf-8')
+    console.log('📖 Reading JSON file:', filePath)
+    const content = await fs.readFile(filePath, 'utf-8')
     const devotionals = JSON.parse(content)
     
     console.log(`📊 Found ${devotionals.length} devotionals to upload`)

@@ -25,14 +25,14 @@ Google Docs → HTML Export → Gemini AI → JSON → Notion Upload Script → 
 4. Attach the HTML file you exported
 5. Send and wait for Gemini to parse
 6. Copy the JSON response
-7. Save it as `devotionals-2026.json` in the project root
+7. Save it as `devotionals-2026.json` in the `scripts/assets/` folder
 
 **Important:** Make sure Gemini returns pure JSON without markdown code blocks. If it includes \`\`\`json, remove those markers.
 
 ### Step 3: Validate the JSON
 
 ```bash
-node -e "JSON.parse(require('fs').readFileSync('devotionals-2026.json'))"
+node -e "JSON.parse(require('fs').readFileSync('scripts/assets/devotionals-2026.json'))"
 ```
 
 If no errors, your JSON is valid! ✅
@@ -76,10 +76,10 @@ Or in batches for safety (using direct command):
 
 ```bash
 # First 10
-node upload-to-notion.mjs devotionals-2026.json --start 0 --end 10
+node scripts/upload-to-notion.mjs devotionals-2026.json --start 0 --end 10
 
 # Next 10
-node upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
+node scripts/upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
 
 # Continue...
 ```
@@ -92,13 +92,14 @@ node upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
 
 ## Files Reference
 
-| File                    | Purpose                                   |
-| ----------------------- | ----------------------------------------- |
-| `GEMINI_PROMPT.md`      | Prompt to use with Gemini AI for parsing  |
-| `FORMATTING_EXAMPLE.md` | How Markdown formatting works             |
-| `upload-to-notion.mjs`  | Script to upload JSON to Notion           |
-| `UPLOAD_GUIDE.md`       | Detailed usage guide for upload script    |
-| `discover-schema.mjs`   | Utility to inspect Notion database schema |
+| File                           | Purpose                                   |
+| ------------------------------ | ----------------------------------------- |
+| `GEMINI_PROMPT.md`             | Prompt to use with Gemini AI for parsing  |
+| `FORMATTING_EXAMPLE.md`        | How Markdown formatting works             |
+| `scripts/upload-to-notion.mjs` | Script to upload JSON to Notion           |
+| `UPLOAD_GUIDE.md`              | Detailed usage guide for upload script    |
+| `scripts/discover-schema.mjs`  | Utility to inspect Notion database schema |
+| `scripts/assets/`              | Folder containing devotionals JSON files  |
 
 ## Tips & Best Practices
 
@@ -129,7 +130,7 @@ node upload-to-notion.mjs devotionals-2026.json --start 10 --end 20
 
 Run the schema discovery to check your database:
 ```bash
-node discover-schema.mjs
+node scripts/discover-schema.mjs
 ```
 
 Make sure your Notion database has all required properties.
@@ -169,13 +170,13 @@ GEMINI_API_KEY=your_key_here
 
 ```bash
 # January
-node upload-to-notion.mjs devotionals-2026.json
+node scripts/upload-to-notion.mjs devotionals-2026.json
 
 # February  
-node upload-to-notion.mjs devotionals-2026-feb.json
+node scripts/upload-to-notion.mjs devotionals-2026-feb.json
 
 # March
-node upload-to-notion.mjs devotionals-2026-mar.json
+node scripts/upload-to-notion.mjs devotionals-2026-mar.json
 ```
 
 ## Summary

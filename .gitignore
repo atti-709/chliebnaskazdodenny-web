@@ -33,6 +33,7 @@ dist-ssr
 
 # Devotional data files (large files, not for git)
 devotionals-*.json
+scripts/assets/
 CHLIEB*.txt
 CHLIEB*.html
 *.html.zip

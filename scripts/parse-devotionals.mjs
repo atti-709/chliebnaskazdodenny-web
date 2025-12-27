@@ -1,8 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import fs from 'fs/promises'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 
-dotenv.config({ path: '.env.local' })
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') })
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
@@ -77,9 +82,14 @@ Return the parsed JSON array:`
     
     console.log(`📊 Parsed ${devotionals.length} devotionals`)
     
+    // Resolve output path relative to assets directory
+    const resolvedOutputPath = path.isAbsolute(outputPath)
+      ? outputPath
+      : path.join(__dirname, 'assets', outputPath)
+    
     // Save to output file
-    await fs.writeFile(outputPath, JSON.stringify(devotionals, null, 2), 'utf-8')
-    console.log('💾 Saved to:', outputPath)
+    await fs.writeFile(resolvedOutputPath, JSON.stringify(devotionals, null, 2), 'utf-8')
+    console.log('💾 Saved to:', resolvedOutputPath)
     
     return devotionals
   } catch (error) {
