@@ -1,0 +1,580 @@
+#!/usr/bin/env node
+/* eslint-disable no-console */
+/**
+ * Podbean Episode Uploader
+ * 
+ * This script automates the process of uploading podcast episodes to Podbean.
+ * It scans a local directory for episodes with FINAL folders, fetches episode
+ * titles from Notion, and uploads them to Podbean with the correct release date.
+ * 
+ * Usage:
+ *   node scripts/upload-to-podbean.mjs [options]
+ * 
+ * Options:
+ *   --dry-run          Show what would be uploaded without actually uploading
+ *   --start-date       Start date (YYYY-MM-DD) for episodes to upload
+ *   --end-date         End date (YYYY-MM-DD) for episodes to upload
+ *   --skip-uploaded    Skip episodes that are already uploaded to Podbean
+ * 
+ * Environment Variables (add to .env.local):
+ *   PODBEAN_CLIENT_ID       - Podbean API client ID
+ *   PODBEAN_CLIENT_SECRET   - Podbean API client secret
+ *   NOTION_API_KEY          - Notion integration token
+ *   NOTION_DATABASE_ID      - Notion database ID for episodes
+ */
+
+import fs from 'fs/promises'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import dotenv from 'dotenv'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') })
+
+// Environment variables
+const PODBEAN_CLIENT_ID = process.env.PODBEAN_CLIENT_ID
+const PODBEAN_CLIENT_SECRET = process.env.PODBEAN_CLIENT_SECRET
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+const DATABASE_ID = process.env.NOTION_DATABASE_ID
+const NOTION_VERSION = '2022-06-28'
+
+// Configuration
+const EPISODES_PATH = '/Users/atti/Library/CloudStorage/GoogleDrive-xzsiros@gmail.com/Shared drives/Chlieb náš každodenný/EPIZÓDY'
+const PODBEAN_API_BASE = 'https://api.podbean.com/v1'
+
+// Validate environment variables
+if (!PODBEAN_CLIENT_ID || !PODBEAN_CLIENT_SECRET) {
+  console.error('❌ Error: PODBEAN_CLIENT_ID and PODBEAN_CLIENT_SECRET must be set in .env.local')
+  console.error('\nTo get these credentials:')
+  console.error('1. Go to https://developers.podbean.com/')
+  console.error('2. Create a new app or use existing one')
+  console.error('3. Copy the Client ID and Client Secret')
+  process.exit(1)
+}
+
+if (!NOTION_API_KEY || !DATABASE_ID) {
+  console.error('❌ Error: NOTION_API_KEY and NOTION_DATABASE_ID must be set in .env.local')
+  process.exit(1)
+}
+
+/**
+ * OAuth 2.0 access token (cached during script execution)
+ */
+let accessToken = null
+
+/**
+ * Gets OAuth 2.0 access token from Podbean
+ */
+async function getAccessToken() {
+  if (accessToken) {
+    return accessToken
+  }
+
+  try {
+    console.log('🔑 Authenticating with Podbean...')
+    
+    const response = await fetch(`${PODBEAN_API_BASE}/oauth/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: PODBEAN_CLIENT_ID,
+        client_secret: PODBEAN_CLIENT_SECRET,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Podbean auth error (${response.status}): ${errorText}`)
+    }
+
+    const data = await response.json()
+    accessToken = data.access_token
+    
+    console.log('✅ Successfully authenticated with Podbean')
+    return accessToken
+  } catch (error) {
+    console.error('❌ Failed to authenticate with Podbean:', error.message)
+    throw error
+  }
+}
+
+/**
+ * Makes a request to Podbean API
+ */
+async function podbeanRequest(endpoint, options = {}) {
+  const token = await getAccessToken()
+  
+  const response = await fetch(`${PODBEAN_API_BASE}${endpoint}`, {
+    method: options.method || 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+    body: options.body,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Podbean API error (${response.status}): ${errorText}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Makes a request to Notion API
+ */
+async function notionRequest(endpoint, options = {}) {
+  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
+    method: options.method || 'POST',
+    headers: {
+      Authorization: `Bearer ${NOTION_API_KEY}`,
+      'Notion-Version': NOTION_VERSION,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Notion API error (${response.status}): ${errorText}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Fetches episode data from Notion by date
+ */
+async function getEpisodeFromNotion(date) {
+  try {
+    const response = await notionRequest(`/databases/${DATABASE_ID}/query`, {
+      body: {
+        filter: {
+          property: 'Date',
+          date: {
+            equals: date,
+          },
+        },
+      },
+    })
+
+    if (response.results.length === 0) {
+      return null
+    }
+
+    const page = response.results[0]
+    const titleProperty = page.properties.Title?.title || page.properties.title?.title
+    const title = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
+    
+    return {
+      pageId: page.id,
+      title: title,
+    }
+  } catch (error) {
+    console.error(`❌ Error fetching episode from Notion for date ${date}:`, error.message)
+    return null
+  }
+}
+
+/**
+ * Updates the Spotify Embed URI field in Notion page
+ */
+async function updateNotionEmbedUri(pageId, embedUri) {
+  try {
+    console.log('📝 Updating Notion with embed URI...')
+    
+    await notionRequest(`/pages/${pageId}`, {
+      method: 'PATCH',
+      body: {
+        properties: {
+          'Spotify Embed URI': {
+            url: embedUri,
+          },
+        },
+      },
+    })
+
+    console.log('✅ Notion page updated with embed URI')
+    return true
+  } catch (error) {
+    console.error('❌ Error updating Notion page:', error.message)
+    return false
+  }
+}
+
+/**
+ * Extracts date from folder name (format: YYYYMMDD_episode_name)
+ */
+function extractDateFromFolderName(folderName) {
+  const match = folderName.match(/^(\d{4})(\d{2})(\d{2})_/)
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`
+  }
+  return null
+}
+
+/**
+ * Scans the episodes directory for episodes ready to upload
+ */
+async function scanEpisodesDirectory(options = {}) {
+  try {
+    console.log('📂 Scanning episodes directory:', EPISODES_PATH)
+    
+    const entries = await fs.readdir(EPISODES_PATH, { withFileTypes: true })
+    const episodes = []
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) {
+        continue
+      }
+
+      const episodePath = path.join(EPISODES_PATH, entry.name)
+      const finalPath = path.join(episodePath, 'FINAL')
+
+      // Check if FINAL folder exists
+      try {
+        await fs.access(finalPath)
+      } catch {
+        // No FINAL folder, skip this episode
+        continue
+      }
+
+      // Check for audio file in FINAL folder
+      const finalFiles = await fs.readdir(finalPath)
+      const audioFile = finalFiles.find(file => 
+        file.endsWith('.wav') || 
+        file.endsWith('.mp3') || 
+        file.endsWith('.m4a')
+      )
+
+      if (!audioFile) {
+        console.log(`⚠️  No audio file found in ${entry.name}/FINAL`)
+        continue
+      }
+
+      // Extract date from folder name
+      const date = extractDateFromFolderName(entry.name)
+      if (!date) {
+        console.log(`⚠️  Could not extract date from folder name: ${entry.name}`)
+        continue
+      }
+
+      // Apply date filters
+      if (options.startDate && date < options.startDate) {
+        continue
+      }
+      if (options.endDate && date > options.endDate) {
+        continue
+      }
+
+      const audioFilePath = path.join(finalPath, audioFile)
+      const stats = await fs.stat(audioFilePath)
+
+      episodes.push({
+        date,
+        folderName: entry.name,
+        audioFile: audioFile,
+        audioFilePath: audioFilePath,
+        fileSize: stats.size,
+        fileSizeMB: (stats.size / (1024 * 1024)).toFixed(2),
+      })
+    }
+
+    // Sort by date
+    episodes.sort((a, b) => a.date.localeCompare(b.date))
+
+    console.log(`✅ Found ${episodes.length} episodes ready to upload`)
+    return episodes
+  } catch (error) {
+    console.error('❌ Error scanning episodes directory:', error.message)
+    throw error
+  }
+}
+
+/**
+ * Gets the upload authorization URL from Podbean
+ */
+async function getUploadAuthUrl(filename, filesize) {
+  try {
+    const params = new URLSearchParams({
+      filename: filename,
+      filesize: filesize.toString(),
+      content_type: filename.endsWith('.mp3') ? 'audio/mpeg' : 
+                    filename.endsWith('.m4a') ? 'audio/mp4' : 'audio/wav',
+    })
+    
+    const data = await podbeanRequest(`/files/uploadAuthorize?${params.toString()}`, {
+      method: 'GET',
+    })
+    
+    return {
+      uploadUrl: data.presigned_url,
+      fileKey: data.file_key,
+    }
+  } catch (error) {
+    console.error('❌ Error getting upload authorization:', error.message)
+    throw error
+  }
+}
+
+/**
+ * Uploads audio file to Podbean
+ */
+async function uploadAudioFile(filePath, uploadUrl) {
+  try {
+    console.log('📤 Uploading audio file...')
+    
+    const fileBuffer = await fs.readFile(filePath)
+    const fileName = path.basename(filePath)
+    
+    // Determine content type
+    const contentType = fileName.endsWith('.mp3') ? 'audio/mpeg' : 
+                       fileName.endsWith('.m4a') ? 'audio/mp4' : 
+                       'audio/wav'
+
+    console.log(`   File size: ${(fileBuffer.length / (1024 * 1024)).toFixed(2)} MB`)
+    console.log(`   Content type: ${contentType}`)
+    console.log(`   Upload URL: ${uploadUrl.substring(0, 50)}...`)
+
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: fileBuffer,
+      headers: {
+        'Content-Type': contentType,
+      },
+    }).catch(err => {
+      console.error('   Fetch error details:', err)
+      throw new Error(`Network error during upload: ${err.message}`)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`   Response status: ${response.status}`)
+      console.error(`   Response error: ${errorText}`)
+      throw new Error(`Upload failed (${response.status}): ${errorText}`)
+    }
+
+    console.log('✅ Audio file uploaded successfully')
+    return true
+  } catch (error) {
+    console.error('❌ Error uploading audio file:', error.message)
+    throw error
+  }
+}
+
+/**
+ * Publishes episode on Podbean
+ */
+async function publishEpisode(title, fileKey, date) {
+  try {
+    console.log('📝 Publishing episode on Podbean...')
+    
+    // Convert date to timestamp (publish at 6:00 AM local time)
+    const publishDate = new Date(date + 'T06:00:00')
+    const publishTimestamp = Math.floor(publishDate.getTime() / 1000)
+    
+    const formData = new URLSearchParams({
+      title: title,
+      content: '', // Add description if needed
+      status: 'publish',
+      type: 'public',
+      media_key: fileKey,
+      publish_time: publishTimestamp.toString(),
+    })
+
+    const data = await podbeanRequest('/episodes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    })
+
+    console.log('✅ Episode published successfully')
+    console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+    
+    return {
+      episodeId: data.episode?.id,
+      playerUrl: data.episode?.player_url,
+      permalink: data.episode?.permalink,
+      ...data
+    }
+  } catch (error) {
+    console.error('❌ Error publishing episode:', error.message)
+    throw error
+  }
+}
+
+/**
+ * Gets list of existing episodes from Podbean
+ */
+async function getExistingEpisodes() {
+  try {
+    const data = await podbeanRequest('/episodes?offset=0&limit=360')
+    return data.episodes || []
+  } catch (error) {
+    console.error('❌ Error fetching existing episodes:', error.message)
+    return []
+  }
+}
+
+/**
+ * Checks if episode already exists on Podbean by title and date
+ */
+function isEpisodeUploaded(existingEpisodes, title, date) {
+  return existingEpisodes.some(episode => {
+    const episodeDate = new Date(episode.publish_time * 1000)
+    const episodeDateStr = episodeDate.toISOString().split('T')[0]
+    return episode.title === title || episodeDateStr === date
+  })
+}
+
+/**
+ * Uploads a single episode to Podbean
+ */
+async function uploadEpisode(episode, options = {}) {
+  try {
+    console.log(`\n${'='.repeat(60)}`)
+    console.log(`📅 Processing episode for ${episode.date}`)
+    console.log(`📁 Folder: ${episode.folderName}`)
+    console.log(`📄 File: ${episode.audioFile} (${episode.fileSizeMB} MB)`)
+    
+    // Fetch episode data from Notion
+    const notionEpisode = await getEpisodeFromNotion(episode.date)
+    if (!notionEpisode || !notionEpisode.title) {
+      throw new Error(`No episode found in Notion for date ${episode.date}`)
+    }
+    
+    console.log(`📝 Title: ${notionEpisode.title}`)
+    
+    if (options.dryRun) {
+      console.log('🏃 DRY RUN - Would upload this episode')
+      return { success: true, dryRun: true }
+    }
+    
+    // Get upload authorization
+    const { uploadUrl, fileKey } = await getUploadAuthUrl(episode.audioFile, episode.fileSize)
+    
+    // Upload audio file
+    await uploadAudioFile(episode.audioFilePath, uploadUrl)
+    
+    // Publish episode
+    const result = await publishEpisode(notionEpisode.title, fileKey, episode.date)
+    
+    // Update Notion with embed URL if available
+    if (result.playerUrl) {
+      await updateNotionEmbedUri(notionEpisode.pageId, result.playerUrl)
+    } else {
+      console.log('⚠️  No player URL available from Podbean API')
+    }
+    
+    console.log(`✅ Successfully uploaded episode for ${episode.date}`)
+    return { success: true, data: result }
+  } catch (error) {
+    console.error(`❌ Failed to upload episode for ${episode.date}:`, error.message)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Main function
+ */
+async function main() {
+  try {
+    const args = process.argv.slice(2)
+    
+    const options = {
+      dryRun: args.includes('--dry-run'),
+      startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
+      endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
+      skipUploaded: args.includes('--skip-uploaded'),
+    }
+    
+    console.log('🚀 Podbean Episode Uploader\n')
+    
+    if (options.dryRun) {
+      console.log('🏃 DRY RUN MODE - No episodes will be uploaded\n')
+    }
+    
+    // Scan episodes directory
+    const episodes = await scanEpisodesDirectory(options)
+    
+    if (episodes.length === 0) {
+      console.log('ℹ️  No episodes found to upload')
+      return
+    }
+    
+    // Get existing episodes from Podbean
+    let existingEpisodes = []
+    if (options.skipUploaded) {
+      console.log('\n🔍 Checking for already uploaded episodes...')
+      existingEpisodes = await getExistingEpisodes()
+      console.log(`📊 Found ${existingEpisodes.length} existing episodes on Podbean`)
+    }
+    
+    // Upload episodes
+    let successCount = 0
+    let skipCount = 0
+    let failCount = 0
+    
+    for (let i = 0; i < episodes.length; i++) {
+      const episode = episodes[i]
+      
+      // Check if already uploaded
+      if (options.skipUploaded) {
+        const notionEpisode = await getEpisodeFromNotion(episode.date)
+        if (notionEpisode && isEpisodeUploaded(existingEpisodes, notionEpisode.title, episode.date)) {
+          console.log(`\n⏭️  Skipping ${episode.date} - already uploaded`)
+          skipCount++
+          continue
+        }
+      }
+      
+      const result = await uploadEpisode(episode, options)
+      
+      if (result.success) {
+        successCount++
+      } else {
+        failCount++
+      }
+      
+      // Rate limiting: wait 2 seconds between uploads
+      if (i < episodes.length - 1 && !options.dryRun) {
+        console.log('⏳ Waiting 2 seconds before next upload...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+    
+    // Summary
+    console.log(`\n${'='.repeat(60)}`)
+    console.log('📊 Upload Summary:')
+    console.log(`✅ Success: ${successCount}`)
+    if (skipCount > 0) {
+      console.log(`⏭️  Skipped: ${skipCount}`)
+    }
+    console.log(`❌ Failed: ${failCount}`)
+    console.log(`📝 Total: ${episodes.length}`)
+    
+  } catch (error) {
+    console.error('\n💥 Upload failed:', error.message)
+    process.exit(1)
+  }
+}
+
+// Run the script
+main()
+  .then(() => {
+    console.log('\n✨ Upload complete!')
+  })
+  .catch(error => {
+    console.error('\n💥 Unexpected error:', error)
+    process.exit(1)
+  })
+

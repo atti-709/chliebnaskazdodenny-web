@@ -52,12 +52,20 @@ npm run dev
 ### Available Commands
 
 ```bash
+# Development
 npm run dev      # Start development server
 npm run build    # Build for production
 npm run preview  # Preview production build
+
+# Code Quality
 npm run lint     # Run ESLint
 npm run lint:fix # Auto-fix ESLint issues
 npm run format   # Format code with Prettier
+
+# Podbean Upload
+npm run podbean:dry-run    # Test Podbean upload without uploading
+npm run podbean:upload     # Upload episodes to Podbean
+npm run podbean:upload-skip # Upload, skipping already uploaded episodes
 ```
 
 ### Build for Production
@@ -67,6 +75,15 @@ npm run build
 ```
 
 The built files will be in the `dist` directory, ready for deployment.
+
+## Podcast Publishing
+
+This project includes automated tools for publishing podcast episodes:
+
+- **Notion Integration**: Content management for episode metadata
+- **Podbean Upload**: Automated episode uploading to Podbean
+
+See the [Podbean Upload Guide](./PODBEAN_UPLOAD_GUIDE.md) for detailed instructions on automating episode uploads.
 
 ## Notion Integration
 
@@ -86,6 +103,10 @@ The application uses Notion as a backend database. Follow the detailed setup gui
    ```env
    NOTION_API_KEY=your_notion_api_key_here
    NOTION_DATABASE_ID=your_notion_database_id_here
+   
+   # Optional: For Podbean upload automation
+   PODBEAN_CLIENT_ID=your_podbean_client_id
+   PODBEAN_CLIENT_SECRET=your_podbean_client_secret
    ```
 
 3. **Restart the dev server**:

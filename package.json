@@ -16,7 +16,10 @@
     "upload:test": "node scripts/upload-to-notion.mjs devotionals-2026.json --start 0 --end 3",
     "upload": "node scripts/upload-to-notion.mjs devotionals-2026.json",
     "upload:force": "node scripts/upload-to-notion.mjs devotionals-2026-dec.json --force",
-    "discover-schema": "node scripts/discover-schema.mjs"
+    "discover-schema": "node scripts/discover-schema.mjs",
+    "podbean:dry-run": "node scripts/upload-to-podbean.mjs --dry-run",
+    "podbean:upload": "node scripts/upload-to-podbean.mjs",
+    "podbean:upload-skip": "node scripts/upload-to-podbean.mjs --skip-uploaded"
   },
   "dependencies": {
     "date-fns": "^2.30.0",
