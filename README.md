@@ -82,8 +82,12 @@ This project includes automated tools for publishing podcast episodes:
 
 - **Notion Integration**: Content management for episode metadata
 - **Podbean Upload**: Automated episode uploading to Podbean
+- **Spotify Sync**: Automatic syncing of Spotify embeds via Vercel cron jobs
 
-See the [Podbean Upload Guide](./PODBEAN_UPLOAD_GUIDE.md) for detailed instructions on automating episode uploads.
+### Quick Start Guides
+
+1. [Podbean Upload Guide](./PODBEAN_UPLOAD_GUIDE.md) - Upload episodes to Podbean
+2. [Spotify Sync Guide](./SPOTIFY_SYNC_GUIDE.md) - Set up automatic Spotify embed syncing
 
 ## Notion Integration
 

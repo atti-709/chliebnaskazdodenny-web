@@ -1,4 +1,12 @@
-function SpotifyPlayer({ embedUri }) {
+/**
+ * PodcastPlayer component
+ *
+ * Generic podcast player that works with any embed URL:
+ * - Podbean embed URLs
+ * - Spotify embed URLs
+ * - Any other podcast platform with iframe embed support
+ */
+function PodcastPlayer({ embedUri }) {
   if (!embedUri) return null
 
   return (
@@ -13,9 +21,12 @@ function SpotifyPlayer({ embedUri }) {
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         loading="lazy"
         className="shadow-md"
+        title="Podcast Episode Player"
       ></iframe>
     </div>
   )
 }
 
-export default SpotifyPlayer
+// Keep backward compatibility
+export default PodcastPlayer
+export { PodcastPlayer as SpotifyPlayer }

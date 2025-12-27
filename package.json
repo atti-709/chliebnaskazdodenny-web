@@ -19,7 +19,8 @@
     "discover-schema": "node scripts/discover-schema.mjs",
     "podbean:dry-run": "node scripts/upload-to-podbean.mjs --dry-run",
     "podbean:upload": "node scripts/upload-to-podbean.mjs",
-    "podbean:upload-skip": "node scripts/upload-to-podbean.mjs --skip-uploaded"
+    "podbean:upload-skip": "node scripts/upload-to-podbean.mjs --skip-uploaded",
+    "spotify:sync": "node -e \"require('node-fetch').then(f => f.default('http://localhost:5173/api/sync-spotify-embeds').then(r => r.json()).then(console.log))\""
   },
   "dependencies": {
     "date-fns": "^2.30.0",

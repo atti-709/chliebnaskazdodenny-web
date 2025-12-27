@@ -134,8 +134,18 @@ For each episode:
    - Audio file
    - Publication date at 6:00 AM (from folder name)
    - Status: Published
+4. **Update Notion**: Automatically updates the "Spotify Embed URI" field in Notion with the Podbean player URL
 
-### 5. Rate Limiting
+### 5. Podcast Player Integration
+
+After successful upload, the script automatically:
+- Gets the Podbean player embed URL from the API response
+- Updates the Notion page's "Spotify Embed URI" field with this URL
+- This URL is then used by the website's `PodcastPlayer` component to display the episode
+
+**Note:** Despite the field name "Spotify Embed URI", it works with any podcast embed URL (Podbean, Spotify, etc.). The `PodcastPlayer` component (formerly `SpotifyPlayer`) is generic and supports any iframe-based embed.
+
+### 6. Rate Limiting
 
 The script automatically waits 2 seconds between uploads to avoid hitting Podbean's API rate limits.
 
@@ -210,6 +220,25 @@ The script automatically waits 2 seconds between uploads to avoid hitting Podbea
 2. Verify the audio file is not too large (Podbean has size limits)
 3. Try again later if Podbean API is experiencing issues
 
+## Podcast Player Options
+
+### Option 1: Podbean Embed (Current Default)
+
+The script automatically uses Podbean's embed player:
+- ✅ **Immediate availability** - Works right after upload
+- ✅ **Automatic integration** - Script updates Notion automatically
+- ✅ **No additional setup** - Works out of the box
+
+### Option 2: Spotify Embed (Optional)
+
+If you prefer Spotify embeds:
+1. Submit your podcast to Spotify via Podbean
+2. Wait for episodes to sync to Spotify (can take hours/days)
+3. Manually get Spotify embed URIs for each episode
+4. Update Notion pages with Spotify URIs
+
+**Recommendation:** Start with Podbean embeds for immediate functionality. You can always switch to Spotify URIs later if desired.
+
 ## Best Practices
 
 1. **Always run dry-run first**: Use `--dry-run` to verify what will be uploaded before actually uploading
@@ -217,6 +246,7 @@ The script automatically waits 2 seconds between uploads to avoid hitting Podbea
 3. **Skip uploaded episodes**: Use `--skip-uploaded` to avoid duplicate uploads
 4. **Monitor the output**: Watch for any errors or warnings during upload
 5. **Backup your episodes**: Keep backups of your audio files before uploading
+6. **Check embed URLs**: After upload, verify that episodes play correctly on your website
 
 ## Scheduling Automatic Uploads
 
@@ -248,8 +278,28 @@ If you encounter any issues:
 3. Verify your environment variables are set correctly
 4. Check the [Podbean API Documentation](https://developers.podbean.com/podbean-api-docs/)
 
+## Automatic Spotify Sync
+
+After uploading to Podbean, you can set up automatic syncing to Spotify embeds:
+
+1. **Setup**: Follow the [Spotify Sync Guide](./SPOTIFY_SYNC_GUIDE.md) to configure automatic syncing
+2. **How it Works**: A Vercel cron job runs daily and updates Notion pages with Spotify embeds
+3. **Timeline**:
+   - Day 0: Upload to Podbean → Immediate Podbean embed
+   - Day 1-2: Episode syncs to Spotify automatically
+   - Day 2+: Cron job detects episode on Spotify → Updates to Spotify embed
+
+**Benefits:**
+- ✅ Immediate episode availability (Podbean)
+- ✅ Automatic migration to Spotify embeds
+- ✅ No manual work required
+- ✅ Best listening experience for users
+
+See the [Spotify Sync Guide](./SPOTIFY_SYNC_GUIDE.md) for detailed setup instructions.
+
 ## Related Documentation
 
+- [Spotify Sync Guide](./SPOTIFY_SYNC_GUIDE.md) - Automatic Spotify embed syncing
 - [Notion Setup Guide](./NOTION_SETUP.md) - Setting up Notion integration
 - [Upload Guide](./UPLOAD_GUIDE.md) - Uploading devotionals to Notion
 - [README](./README.md) - Main project documentation

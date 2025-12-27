@@ -1,5 +1,5 @@
 import { NotionBlocksRenderer } from './NotionBlocksRenderer/index.tsx'
-import SpotifyPlayer from './SpotifyPlayer'
+import PodcastPlayer from './SpotifyPlayer'
 
 // Strip Markdown formatting (asterisks) from text
 function stripMarkdown(text) {
@@ -77,8 +77,8 @@ function DevotionalContent({ devotional }) {
         </div>
       )}
 
-      {/* Spotify Player */}
-      <SpotifyPlayer embedUri={devotional.spotifyEmbedUri} />
+      {/* Podcast Player (supports Podbean, Spotify, etc.) */}
+      <PodcastPlayer embedUri={devotional.spotifyEmbedUri} />
 
       {/* Devotional Text */}
       <div
