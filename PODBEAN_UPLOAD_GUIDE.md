@@ -184,12 +184,12 @@ node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-15
 
 ## Command Line Options
 
-| Option                    | Description                                              |
-| ------------------------- | -------------------------------------------------------- |
-| `--dry-run`               | Show what would be uploaded without actually uploading   |
-| `--start-date YYYY-MM-DD` | Start date for episodes to upload                        |
-| `--end-date YYYY-MM-DD`   | End date for episodes to upload                          |
-| `--force`                 | Upload even if episode exists (creates duplicate)        |
+| Option                    | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| `--dry-run`               | Show what would be uploaded without actually uploading |
+| `--start-date YYYY-MM-DD` | Start date for episodes to upload                      |
+| `--end-date YYYY-MM-DD`   | End date for episodes to upload                        |
+| `--force`                 | Upload even if episode exists (creates duplicate)      |
 
 ## How It Works
 
