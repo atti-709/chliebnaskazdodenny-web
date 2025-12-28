@@ -45,11 +45,11 @@ The script expects your episodes to be organized in the following structure:
 /Users/atti/Library/CloudStorage/GoogleDrive-xzsiros@gmail.com/Shared drives/Chlieb náš každodenný/EPIZÓDY/
 ├── 20260101_episode_name/
 │   ├── FINAL/
-│   │   └── 2026_01_01_Episode_Name.wav
+│   │   └── 2026_01_01_Episode_Name.mp3  (or .m4a)
 │   └── SRC/
 ├── 20260102_another_episode/
 │   ├── FINAL/
-│   │   └── 2026_01_02_Another_Episode.wav
+│   │   └── 2026_01_02_Another_Episode.mp3  (or .m4a)
 │   └── SRC/
 └── ...
 ```
@@ -57,7 +57,82 @@ The script expects your episodes to be organized in the following structure:
 **Important:**
 - Folder name format: `YYYYMMDD_episode_slug`
 - Only episodes with a `FINAL` folder will be processed
-- Supported audio formats: `.wav`, `.mp3`, `.m4a`
+- **Supported audio formats**: `.mp3`, `.m4a` only
+- **WAV files are NOT supported** by Podbean - see conversion guide below
+
+## Converting WAV Files to MP3
+
+Podbean only accepts MP3 and M4A formats. If your episodes are in WAV format, they will be **automatically converted** during upload.
+
+### Automatic Conversion (Default)
+
+The upload script now automatically converts WAV files to MP3 when needed:
+
+**1. Install ffmpeg** (one-time setup):
+```bash
+# macOS
+brew install ffmpeg
+
+# Linux
+sudo apt-get install ffmpeg
+
+# Windows
+# Download from https://ffmpeg.org/download.html
+```
+
+**2. Just run the upload** - conversion happens automatically:
+```bash
+npm run podbean:upload
+```
+
+The script will:
+- Detect WAV files automatically
+- Convert them to MP3 (320 kbps) on the fly
+- Upload the MP3 to Podbean
+- Keep the original WAV file
+- Reuse existing MP3 if already converted
+
+### Manual Batch Conversion (Optional)
+
+If you prefer to convert all files at once before uploading, we also provide a standalone conversion script:
+
+**1. Install ffmpeg** (one-time setup):
+```bash
+# macOS
+brew install ffmpeg
+
+# Linux
+sudo apt-get install ffmpeg
+
+# Windows
+# Download from https://ffmpeg.org/download.html
+```
+
+**2. Convert all WAV files**:
+```bash
+# Dry run first to see what will be converted
+npm run convert:wav-dry
+
+# Convert all WAV files
+npm run convert:wav
+
+# Or convert a specific date
+node scripts/convert-wav-to-mp3.mjs --date 2026-01-01
+```
+
+The converter will:
+- Find all WAV files in FINAL folders
+- Convert them to high-quality MP3 (320 kbps CBR)
+- Keep the original WAV file
+- Skip files that are already converted
+
+### Manual Conversion with Audio Software
+
+You can also convert files manually using your preferred audio editing software:
+- **Audacity** (free): Export as MP3
+- **Adobe Audition**: Export as MP3
+- **GarageBand**: Share as MP3
+- **Command line**: `ffmpeg -i input.wav -b:a 320k output.mp3`
 
 ## Usage
 
@@ -204,12 +279,23 @@ The script automatically waits 2 seconds between uploads to avoid hitting Podbea
 
 ### Error: No audio file found in FINAL folder
 
-**Problem**: Episode folder doesn't contain an audio file in the FINAL subfolder
+**Problem**: Episode folder doesn't contain a supported audio file in the FINAL subfolder
 
 **Solution**:
 1. Ensure the episode has a `FINAL` folder
-2. Check that the audio file is in a supported format (`.wav`, `.mp3`, `.m4a`)
-3. Verify the file is not empty or corrupted
+2. Check that the audio file is in a supported format (`.mp3`, `.m4a`)
+3. If you have WAV files, convert them first using `npm run convert:wav`
+4. Verify the file is not empty or corrupted
+
+### Error: "File type not supported"
+
+**Problem**: Podbean rejected the audio file format
+
+**Solution**:
+- Podbean only accepts MP3 and M4A formats
+- WAV files are NOT supported
+- Convert your WAV files to MP3: `npm run convert:wav`
+- Then try uploading again
 
 ### Error: Upload failed
 

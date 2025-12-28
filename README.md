@@ -62,6 +62,10 @@ npm run lint     # Run ESLint
 npm run lint:fix # Auto-fix ESLint issues
 npm run format   # Format code with Prettier
 
+# Audio Conversion
+npm run convert:wav-dry  # Preview WAV to MP3 conversions
+npm run convert:wav      # Convert all WAV files to MP3
+
 # Podbean Upload
 npm run podbean:dry-run    # Test Podbean upload without uploading
 npm run podbean:upload     # Upload episodes to Podbean
