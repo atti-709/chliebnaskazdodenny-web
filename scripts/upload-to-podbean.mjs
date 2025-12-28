@@ -14,7 +14,7 @@
  *   --dry-run          Show what would be uploaded without actually uploading
  *   --start-date       Start date (YYYY-MM-DD) for episodes to upload
  *   --end-date         End date (YYYY-MM-DD) for episodes to upload
- *   --skip-uploaded    Skip episodes that are already uploaded to Podbean
+ *   --force            Upload even if episode already exists (creates duplicate)
  * 
  * Environment Variables (add to .env.local):
  *   PODBEAN_CLIENT_ID       - Podbean API client ID
@@ -497,6 +497,17 @@ function isEpisodeUploaded(existingEpisodes, title, date) {
 }
 
 /**
+ * Finds existing episode on Podbean by title and date
+ */
+function findExistingEpisode(existingEpisodes, title, date) {
+  return existingEpisodes.find(episode => {
+    const episodeDate = new Date(episode.publish_time * 1000)
+    const episodeDateStr = episodeDate.toISOString().split('T')[0]
+    return episode.title === title || episodeDateStr === date
+  })
+}
+
+/**
  * Uploads a single episode to Podbean
  */
 async function uploadEpisode(episode, options = {}) {
@@ -513,6 +524,32 @@ async function uploadEpisode(episode, options = {}) {
     }
     
     console.log(`📝 Title: ${notionEpisode.title}`)
+    
+    // Check if episode already exists on Podbean
+    if (options.existingEpisodes) {
+      const existingEpisode = findExistingEpisode(
+        options.existingEpisodes,
+        notionEpisode.title,
+        episode.date
+      )
+      
+      if (existingEpisode) {
+        const existingDate = new Date(existingEpisode.publish_time * 1000)
+        const existingDateStr = existingDate.toISOString().split('T')[0]
+        
+        console.log(`⚠️  Episode already exists on Podbean:`)
+        console.log(`   Title: ${existingEpisode.title}`)
+        console.log(`   Published: ${existingDateStr}`)
+        console.log(`   URL: ${existingEpisode.permalink || 'N/A'}`)
+        
+        if (options.force) {
+          console.log('⚡ --force flag detected - uploading anyway (will create duplicate)')
+        } else {
+          console.log('⏭️  Skipping (use --force to upload anyway)')
+          return { success: true, skipped: true, reason: 'already_exists' }
+        }
+      }
+    }
     
     if (options.dryRun) {
       if (episode.needsConversion) {
@@ -593,7 +630,7 @@ async function main() {
       dryRun: args.includes('--dry-run'),
       startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
       endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
-      skipUploaded: args.includes('--skip-uploaded'),
+      force: args.includes('--force'),
     }
     
     console.log('🚀 Podbean Episode Uploader\n')
@@ -618,13 +655,13 @@ async function main() {
       return
     }
     
-    // Get existing episodes from Podbean
-    let existingEpisodes = []
-    if (options.skipUploaded) {
-      console.log('\n🔍 Checking for already uploaded episodes...')
-      existingEpisodes = await getExistingEpisodes()
-      console.log(`📊 Found ${existingEpisodes.length} existing episodes on Podbean`)
-    }
+    // Get existing episodes from Podbean (always check to prevent duplicates)
+    console.log('\n🔍 Checking for existing episodes on Podbean...')
+    const existingEpisodes = await getExistingEpisodes()
+    console.log(`📊 Found ${existingEpisodes.length} existing episodes on Podbean\n`)
+    
+    // Pass existing episodes to upload options
+    options.existingEpisodes = existingEpisodes
     
     // Upload episodes
     let successCount = 0
@@ -634,20 +671,14 @@ async function main() {
     for (let i = 0; i < episodes.length; i++) {
       const episode = episodes[i]
       
-      // Check if already uploaded
-      if (options.skipUploaded) {
-        const notionEpisode = await getEpisodeFromNotion(episode.date)
-        if (notionEpisode && isEpisodeUploaded(existingEpisodes, notionEpisode.title, episode.date)) {
-          console.log(`\n⏭️  Skipping ${episode.date} - already uploaded`)
-          skipCount++
-          continue
-        }
-      }
-      
       const result = await uploadEpisode(episode, options)
       
       if (result.success) {
-        successCount++
+        if (result.skipped) {
+          skipCount++
+        } else {
+          successCount++
+        }
       } else {
         failCount++
       }

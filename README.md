@@ -68,8 +68,8 @@ npm run convert:wav      # Convert all WAV files to MP3
 
 # Podbean Upload
 npm run podbean:dry-run    # Test Podbean upload without uploading
-npm run podbean:upload     # Upload episodes to Podbean
-npm run podbean:upload-skip # Upload, skipping already uploaded episodes
+npm run podbean:upload     # Upload episodes to Podbean (skips duplicates)
+npm run podbean:force      # Force upload (even if already exists)
 ```
 
 ### Build for Production

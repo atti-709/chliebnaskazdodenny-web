@@ -21,7 +21,7 @@
     "convert:wav-dry": "node scripts/convert-wav-to-mp3.mjs --all --dry-run",
     "podbean:dry-run": "node scripts/upload-to-podbean.mjs --dry-run",
     "podbean:upload": "node scripts/upload-to-podbean.mjs",
-    "podbean:upload-skip": "node scripts/upload-to-podbean.mjs --skip-uploaded",
+    "podbean:force": "node scripts/upload-to-podbean.mjs --force",
     "spotify:sync": "node -e \"require('node-fetch').then(f => f.default('http://localhost:5173/api/sync-spotify-embeds').then(r => r.json()).then(console.log))\""
   },
   "dependencies": {

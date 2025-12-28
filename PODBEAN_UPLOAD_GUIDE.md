@@ -158,12 +158,20 @@ Upload all episodes that are ready:
 npm run podbean:upload
 ```
 
-### Upload with Skip Already Uploaded
+The script will automatically:
+- ✅ Check which episodes already exist on Podbean
+- ✅ Skip episodes that are already uploaded
+- ✅ Only upload new episodes
 
-Skip episodes that are already on Podbean:
+### Force Upload (Override Duplicate Check)
+
+To upload even if episodes already exist (creates duplicates):
 
 ```bash
-npm run podbean:upload-skip
+npm run podbean:force
+
+# Or with date range
+node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-31 --force
 ```
 
 ### Upload Specific Date Range
@@ -176,12 +184,12 @@ node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-15
 
 ## Command Line Options
 
-| Option                    | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `--dry-run`               | Show what would be uploaded without actually uploading |
-| `--start-date YYYY-MM-DD` | Start date for episodes to upload                      |
-| `--end-date YYYY-MM-DD`   | End date for episodes to upload                        |
-| `--skip-uploaded`         | Skip episodes that are already uploaded to Podbean     |
+| Option                    | Description                                              |
+| ------------------------- | -------------------------------------------------------- |
+| `--dry-run`               | Show what would be uploaded without actually uploading   |
+| `--start-date YYYY-MM-DD` | Start date for episodes to upload                        |
+| `--end-date YYYY-MM-DD`   | End date for episodes to upload                          |
+| `--force`                 | Upload even if episode exists (creates duplicate)        |
 
 ## How It Works
 
@@ -189,17 +197,25 @@ node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-15
 
 The script scans the episodes directory and looks for folders with the format `YYYYMMDD_episode_name` that contain a `FINAL` subfolder with an audio file.
 
-### 2. Date Extraction
+### 2. Duplicate Detection
+
+Before uploading, the script:
+- Fetches all existing episodes from Podbean
+- Checks if an episode with the same title or date already exists
+- Skips episodes that are already uploaded (unless `--force` is used)
+- Shows details of existing episodes when found
+
+### 3. Date Extraction
 
 The date is extracted from the folder name:
 - Folder: `20260101_strach_z_neznama`
 - Date: `2026-01-01`
 
-### 3. Title Fetching
+### 4. Title Fetching
 
 The script queries your Notion database for a page with a matching date and retrieves the episode title from the `Title` property.
 
-### 4. Upload Process
+### 5. Upload Process
 
 For each episode:
 1. **Authorization**: Gets an upload authorization URL from Podbean
@@ -211,7 +227,7 @@ For each episode:
    - Status: Published
 4. **Update Notion**: Automatically updates the "Spotify Embed URI" field in Notion with the Podbean player URL
 
-### 5. Podcast Player Integration
+### 6. Podcast Player Integration
 
 After successful upload, the script automatically:
 - Gets the Podbean player embed URL from the API response
@@ -220,7 +236,7 @@ After successful upload, the script automatically:
 
 **Note:** Despite the field name "Spotify Embed URI", it works with any podcast embed URL (Podbean, Spotify, etc.). The `PodcastPlayer` component (formerly `SpotifyPlayer`) is generic and supports any iframe-based embed.
 
-### 6. Rate Limiting
+### 7. Rate Limiting
 
 The script automatically waits 2 seconds between uploads to avoid hitting Podbean's API rate limits.
 
