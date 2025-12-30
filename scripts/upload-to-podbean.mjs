@@ -430,20 +430,35 @@ async function uploadAudioFile(filePath, uploadUrl) {
 }
 
 /**
- * Publishes episode on Podbean
+ * Publishes or schedules episode on Podbean
  */
 async function publishEpisode(title, fileKey, date) {
   try {
-    console.log('📝 Publishing episode on Podbean...')
-    
     // Convert date to timestamp (publish at 6:00 AM local time)
     const publishDate = new Date(date + 'T06:00:00')
     const publishTimestamp = Math.floor(publishDate.getTime() / 1000)
+    const now = Math.floor(Date.now() / 1000)
+    
+    // Determine if this is a future episode
+    const isFuture = publishTimestamp > now
+    
+    if (isFuture) {
+      console.log('📅 Scheduling future episode on Podbean...')
+      console.log(`   Scheduled for: ${publishDate.toLocaleString()} (${date} 06:00 AM)`)
+    } else {
+      console.log('📝 Publishing episode on Podbean...')
+      console.log(`   Publish date: ${publishDate.toLocaleString()} (${date} 06:00 AM)`)
+    }
+    
+    // For Podbean API:
+    // - status: 'draft' with publish_time creates a scheduled episode
+    // - status: 'publish' publishes immediately (ignores publish_time)
+    const status = isFuture ? 'draft' : 'publish'
     
     const formData = new URLSearchParams({
       title: title,
       content: '', // Add description if needed
-      status: 'publish',
+      status: status,
       type: 'public',
       media_key: fileKey,
       publish_time: publishTimestamp.toString(),
@@ -457,8 +472,15 @@ async function publishEpisode(title, fileKey, date) {
       body: formData,
     })
 
-    console.log('✅ Episode published successfully')
-    console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+    if (isFuture) {
+      console.log('✅ Episode scheduled successfully')
+      console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+      console.log(`   Will auto-publish on: ${publishDate.toLocaleString()}`)
+    } else {
+      console.log('✅ Episode published successfully')
+      console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+      console.log(`   Published on: ${publishDate.toLocaleString()}`)
+    }
     
     return {
       episodeId: data.episode?.id,

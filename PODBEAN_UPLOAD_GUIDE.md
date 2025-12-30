@@ -220,11 +220,13 @@ The script queries your Notion database for a page with a matching date and retr
 For each episode:
 1. **Authorization**: Gets an upload authorization URL from Podbean
 2. **Upload**: Uploads the audio file to Podbean's storage
-3. **Publish**: Creates the episode on Podbean with:
+3. **Publish/Schedule**: Creates the episode on Podbean with:
    - Title from Notion
    - Audio file
    - Publication date at 6:00 AM (from folder name)
-   - Status: Published
+   - Status: 
+     - **Draft** (scheduled) if date is in the future - will auto-publish at scheduled time
+     - **Published** if date is today or in the past - publishes immediately
 4. **Update Notion**: Automatically updates the "Spotify Embed URI" field in Notion with the Podbean player URL
 
 ### 6. Podcast Player Integration
@@ -236,7 +238,24 @@ After successful upload, the script automatically:
 
 **Note:** Despite the field name "Spotify Embed URI", it works with any podcast embed URL (Podbean, Spotify, etc.). The `PodcastPlayer` component (formerly `SpotifyPlayer`) is generic and supports any iframe-based embed.
 
-### 7. Rate Limiting
+### 7. Smart Scheduling
+
+The script intelligently handles episode scheduling:
+
+- **Future Episodes** (date > today): Uploaded as **Draft** with scheduled publish time
+  - Episode will automatically publish on Podbean at the scheduled date/time
+  - Status: Draft (scheduled)
+  
+- **Past/Today Episodes** (date ≤ today): Uploaded as **Published** immediately
+  - Episode is published right away with the specified date
+  - Status: Published
+
+This ensures:
+- ✅ Future episodes don't publish immediately
+- ✅ Past episodes are available right away
+- ✅ Episodes publish at 6:00 AM on their scheduled date
+
+### 8. Rate Limiting
 
 The script automatically waits 2 seconds between uploads to avoid hitting Podbean's API rate limits.
 
