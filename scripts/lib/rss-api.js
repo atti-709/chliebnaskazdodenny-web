@@ -65,6 +65,13 @@ export async function testCredentials() {
 export async function getExistingEpisodes(limit = 360) {
   try {
     const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${limit}`)
+    
+    // RSS.com v4 API returns episodes as root array, not wrapped in object
+    if (Array.isArray(data)) {
+      return data
+    }
+    
+    // Fallback: check for common wrapper keys
     return data.items || data.data || data.episodes || []
   } catch (error) {
     console.error('⚠️  Could not fetch existing episodes:', error.message)
@@ -82,7 +89,13 @@ export async function getExistingEpisodes(limit = 360) {
  */
 export function findExistingEpisode(existingEpisodes, title, date) {
   return existingEpisodes.find(episode => {
-    const episodeDate = episode.publishedAt || episode.published_at || episode.date
+    // RSS.com v4 API uses publish_datetime for published episodes
+    // and schedule_datetime for scheduled episodes
+    const episodeDate = episode.publish_datetime || 
+                       episode.schedule_datetime || 
+                       episode.publishedAt || 
+                       episode.published_at || 
+                       episode.date
     const episodeDateStr = episodeDate ? new Date(episodeDate).toISOString().split('T')[0] : null
     return episode.title === title || episodeDateStr === date
   })
@@ -217,11 +230,41 @@ export async function createEpisodeWithAsset(audioId, title, date) {
     const data = await response.json()
     console.log('✅ Episode created successfully')
     
+    // Extract episode data - RSS.com v4 API returns episode object directly
+    const episodeId = data.id || data.episode?.id
+    
+    // Extract podcast slug from website_url if available
+    // Format: https://rss.com/podcasts/[slug]/[episode-id]
+    let podcastSlug = null
+    if (data.website_url) {
+      const match = data.website_url.match(/rss\.com\/podcasts\/([^/]+)/)
+      if (match) {
+        podcastSlug = match[1]
+      }
+    }
+    
+    // Construct the RSS.com player embed URL
+    // Format: https://player.rss.com/[podcast-slug]/[episode-id]
+    let playerEmbedUrl = null
+    if (episodeId && podcastSlug) {
+      playerEmbedUrl = `https://player.rss.com/${podcastSlug}/${episodeId}`
+      console.log(`   Episode ID: ${episodeId}`)
+      console.log(`   Podcast Slug: ${podcastSlug}`)
+      console.log(`   Player Embed URL: ${playerEmbedUrl}`)
+    } else {
+      console.log(`   Episode ID: ${episodeId || 'Not available'}`)
+      console.log(`   Podcast Slug: ${podcastSlug || 'Not available'}`)
+    }
+    
+    // Fallback to website_url if player embed can't be constructed
+    const finalPlayerUrl = playerEmbedUrl || data.website_url || data.permalink
+    
     return {
-      episodeId: data.id || data.episode?.id,
-      playerUrl: data.player_url || data.episode?.player_url || data.url,
-      permalink: data.permalink || data.episode?.permalink || data.url,
-      ...data
+      episodeId,
+      playerUrl: finalPlayerUrl,
+      websiteUrl: data.website_url,
+      podcastSlug,
+      rawResponse: data // Keep full response for debugging
     }
   } catch (error) {
     console.error('❌ Error creating episode:', error.message)

@@ -128,12 +128,12 @@ The app will now fetch devotionals from your Notion database!
 
 The required Notion database properties are:
 
-| Property Name     | Type      | Description                             |
-| ----------------- | --------- | --------------------------------------- |
-| Title             | Title     | The devotional title                    |
-| Date              | Date      | The devotional date (YYYY-MM-DD format) |
-| Quote             | Rich text | The quote reference                     |
-| Spotify Embed URI | URL       | The Spotify embed URI                   |
+| Property Name     | Type      | Description                                   |
+| ----------------- | --------- | --------------------------------------------- |
+| Title             | Title     | The devotional title                          |
+| Date              | Date      | The devotional date (YYYY-MM-DD format)       |
+| Quote             | Rich text | The quote reference                           |
+| Spotify Embed URI | URL       | The RSS.com player embed URI (or Spotify URI) |
 
 The devotional content should be written in the page content area using Notion blocks.
 
@@ -180,6 +180,45 @@ The application follows a minimalistic, fluid design inspired by elegant reading
 - **Color Palette**: Clean whites (#F9F9F9) with soft green accent (#8B9D83)
 - **Layout**: Centered content with optimal reading width
 - **Animations**: Smooth, subtle transitions for a polished feel
+
+## Scripts
+
+The project includes several utility scripts for managing podcast episodes:
+
+### Episode Upload
+
+```bash
+# Upload episodes to RSS.com
+node scripts/upload-to-rss.mjs [options]
+
+Options:
+  --dry-run          Show what would be uploaded without uploading
+  --start-date       Start date (YYYY-MM-DD) for episodes to upload
+  --end-date         End date (YYYY-MM-DD) for episodes to upload
+  --force            Upload even if episode already exists
+```
+
+### RSS.com Player URL Sync
+
+```bash
+# Sync RSS.com player URLs to Notion
+node scripts/sync-rss-player-urls.mjs [options]
+
+Options:
+  --dry-run          Preview what would be updated
+  --start-date       Start date (YYYY-MM-DD) to filter episodes
+  --end-date         End date (YYYY-MM-DD) to filter episodes
+  --limit            Number of episodes to fetch (default: 100)
+```
+
+### Episode Inspection
+
+```bash
+# Inspect RSS.com API response for debugging
+node scripts/inspect-rss-episode.mjs [episode-number]
+```
+
+See [RSS_PLAYER_SYNC_GUIDE.md](scripts/RSS_PLAYER_SYNC_GUIDE.md) for detailed documentation.
 
 ## Contributing
 

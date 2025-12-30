@@ -70,27 +70,72 @@ export async function getEpisodeFromNotion(date) {
 }
 
 /**
- * Updates the Spotify Embed URI field in Notion page
- * @param {string} pageId - Notion page ID
- * @param {string} embedUri - Spotify embed URI
- * @returns {Promise<boolean>} True if update successful
+ * Fetches episode data from Notion by title
+ * @param {string} title - Episode title
+ * @returns {Promise<Object|null>} Episode data or null if not found
  */
-export async function updateNotionEmbedUri(pageId, embedUri) {
+export async function getEpisodeFromNotionByTitle(title) {
   try {
-    console.log('📝 Updating Notion with embed URI...')
-    
-    await notionRequest(`/pages/${pageId}`, {
-      method: 'PATCH',
+    const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, {
       body: {
-        properties: {
-          'Spotify Embed URI': {
-            url: embedUri,
+        filter: {
+          property: 'Title',
+          title: {
+            equals: title,
           },
         },
       },
     })
 
-    console.log('✅ Notion page updated with embed URI')
+    if (response.results.length === 0) {
+      return null
+    }
+
+    const page = response.results[0]
+    const titleProperty = page.properties.Title?.title || page.properties.title?.title
+    const pageTitle = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
+    
+    // Also get the date for display purposes
+    const dateProperty = page.properties.Date?.date
+    const date = dateProperty ? dateProperty.start : null
+    
+    return {
+      pageId: page.id,
+      title: pageTitle,
+      date: date,
+    }
+  } catch (error) {
+    console.error(`❌ Error fetching episode from Notion by title "${title}":`, error.message)
+    return null
+  }
+}
+
+/**
+ * Updates the Spotify Embed URI field in Notion page
+ * @param {string} pageId - Notion page ID
+ * @param {string} embedUri - Spotify embed URI (empty string to clear)
+ * @returns {Promise<boolean>} True if update successful
+ */
+export async function updateNotionEmbedUri(pageId, embedUri) {
+  try {
+    const action = embedUri ? 'Updating' : 'Clearing'
+    console.log(`📝 ${action} Notion embed URI...`)
+    
+    await notionRequest(`/pages/${pageId}`, {
+      method: 'PATCH',
+      body: {
+        properties: {
+          'Spotify Embed URI': embedUri ? {
+            url: embedUri,
+          } : {
+            url: null, // Clear the URL field
+          },
+        },
+      },
+    })
+
+    const result = embedUri ? 'updated' : 'cleared'
+    console.log(`✅ Notion page ${result}`)
     return true
   } catch (error) {
     console.error('❌ Error updating Notion page:', error.message)
