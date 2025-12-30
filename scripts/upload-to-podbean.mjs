@@ -248,7 +248,7 @@ async function convertWAVtoMP3(wavPath, mp3Path) {
     const ffmpeg = spawn('ffmpeg', [
       '-i', wavPath,           // Input file
       '-codec:a', 'libmp3lame', // MP3 encoder
-      '-b:a', '320k',           // Constant bitrate 320 kbps
+      '-b:a', '128k',           // Constant bitrate 320 kbps
       '-y',                     // Overwrite if exists
       mp3Path                   // Output file
     ])
