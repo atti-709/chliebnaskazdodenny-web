@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * RSS.com API Client
  * 
