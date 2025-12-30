@@ -66,10 +66,10 @@ npm run format   # Format code with Prettier
 npm run convert:wav-dry  # Preview WAV to MP3 conversions
 npm run convert:wav      # Convert all WAV files to MP3
 
-# Podbean Upload
-npm run podbean:dry-run    # Test Podbean upload without uploading
-npm run podbean:upload     # Upload episodes to Podbean (skips duplicates)
-npm run podbean:force      # Force upload (even if already exists)
+# RSS.com Upload
+npm run rss:dry-run    # Test RSS.com upload without uploading
+npm run rss:upload     # Upload episodes to RSS.com (skips duplicates)
+npm run rss:force      # Force upload (even if already exists)
 ```
 
 ### Build for Production
@@ -85,12 +85,12 @@ The built files will be in the `dist` directory, ready for deployment.
 This project includes automated tools for publishing podcast episodes:
 
 - **Notion Integration**: Content management for episode metadata
-- **Podbean Upload**: Automated episode uploading to Podbean
+- **RSS.com Upload**: Automated episode uploading to RSS.com
 - **Spotify Sync**: Automatic syncing of Spotify embeds via Vercel cron jobs
 
 ### Quick Start Guides
 
-1. [Podbean Upload Guide](./PODBEAN_UPLOAD_GUIDE.md) - Upload episodes to Podbean
+1. [RSS.com Upload Guide](./RSS_UPLOAD_GUIDE.md) - Upload episodes to RSS.com
 2. [Spotify Sync Guide](./SPOTIFY_SYNC_GUIDE.md) - Set up automatic Spotify embed syncing
 
 ## Notion Integration
@@ -112,9 +112,9 @@ The application uses Notion as a backend database. Follow the detailed setup gui
    NOTION_API_KEY=your_notion_api_key_here
    NOTION_DATABASE_ID=your_notion_database_id_here
    
-   # Optional: For Podbean upload automation
-   PODBEAN_CLIENT_ID=your_podbean_client_id
-   PODBEAN_CLIENT_SECRET=your_podbean_client_secret
+   # Optional: For RSS.com upload automation
+   RSS_CLIENT_ID=your_rss_client_id
+   RSS_CLIENT_SECRET=your_rss_client_secret
    ```
 
 3. **Restart the dev server**:

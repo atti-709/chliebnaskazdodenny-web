@@ -1,25 +1,25 @@
-# Podbean Upload Guide
+# RSS.com Upload Guide
 
-This guide explains how to use the automated Podbean episode uploader script to publish your daily podcast episodes.
+This guide explains how to use the automated RSS.com episode uploader script to publish your daily podcast episodes.
 
 ## Overview
 
-The `upload-to-podbean.mjs` script automates the process of uploading podcast episodes to Podbean. It:
+The `upload-to-rss.mjs` script automates the process of uploading podcast episodes to RSS.com. It:
 
 1. 📂 Scans your local episodes directory for episodes ready to upload (those with a FINAL folder)
 2. 📅 Extracts the publication date from the folder name
 3. 📝 Fetches the episode title from your Notion database
-4. 📤 Uploads the audio file to Podbean
+4. 📤 Uploads the audio file to RSS.com
 5. 🎙️ Publishes the episode with the correct title and release date
 
 ## Prerequisites
 
-### 1. Podbean API Credentials
+### 1. RSS.com API Credentials
 
-You need to obtain API credentials from Podbean:
+You need to obtain API credentials from RSS.com:
 
-1. Go to [Podbean Developers Portal](https://developers.podbean.com/)
-2. Sign in with your Podbean account
+1. Go to [RSS.com Developers Portal](https://developers.rss.com/)
+2. Sign in with your RSS.com account
 3. Create a new app or use an existing one
 4. Copy your **Client ID** and **Client Secret**
 
@@ -28,9 +28,9 @@ You need to obtain API credentials from Podbean:
 Add the following to your `.env.local` file in the project root:
 
 ```env
-# Podbean API Credentials
-PODBEAN_CLIENT_ID=your_client_id_here
-PODBEAN_CLIENT_SECRET=your_client_secret_here
+# RSS.com API Credentials
+RSS_CLIENT_ID=your_client_id_here
+RSS_CLIENT_SECRET=your_client_secret_here
 
 # Notion API Credentials (already configured)
 NOTION_API_KEY=your_notion_api_key
@@ -58,11 +58,11 @@ The script expects your episodes to be organized in the following structure:
 - Folder name format: `YYYYMMDD_episode_slug`
 - Only episodes with a `FINAL` folder will be processed
 - **Supported audio formats**: `.mp3`, `.m4a` only
-- **WAV files are NOT supported** by Podbean - see conversion guide below
+- **WAV files are NOT supported** by RSS.com - see conversion guide below
 
 ## Converting WAV Files to MP3
 
-Podbean only accepts MP3 and M4A formats. If your episodes are in WAV format, they will be **automatically converted** during upload.
+RSS.com only accepts MP3 and M4A formats. If your episodes are in WAV format, they will be **automatically converted** during upload.
 
 ### Automatic Conversion (Default)
 
@@ -82,13 +82,13 @@ sudo apt-get install ffmpeg
 
 **2. Just run the upload** - conversion happens automatically:
 ```bash
-npm run podbean:upload
+npm run rss:upload
 ```
 
 The script will:
 - Detect WAV files automatically
 - Convert them to MP3 (320 kbps) on the fly
-- Upload the MP3 to Podbean
+- Upload the MP3 to RSS.com
 - Keep the original WAV file
 - Reuse existing MP3 if already converted
 
@@ -141,13 +141,13 @@ You can also convert files manually using your preferred audio editing software:
 Test what would be uploaded without actually uploading:
 
 ```bash
-npm run podbean:dry-run
+npm run rss:dry-run
 ```
 
 Or with custom date range:
 
 ```bash
-node scripts/upload-to-podbean.mjs --dry-run --start-date 2026-01-01 --end-date 2026-01-31
+node scripts/upload-to-rss.mjs --dry-run --start-date 2026-01-01 --end-date 2026-01-31
 ```
 
 ### Upload All Episodes
@@ -155,11 +155,11 @@ node scripts/upload-to-podbean.mjs --dry-run --start-date 2026-01-01 --end-date 
 Upload all episodes that are ready:
 
 ```bash
-npm run podbean:upload
+npm run rss:upload
 ```
 
 The script will automatically:
-- ✅ Check which episodes already exist on Podbean
+- ✅ Check which episodes already exist on RSS.com
 - ✅ Skip episodes that are already uploaded
 - ✅ Only upload new episodes
 
@@ -168,10 +168,10 @@ The script will automatically:
 To upload even if episodes already exist (creates duplicates):
 
 ```bash
-npm run podbean:force
+npm run rss:force
 
 # Or with date range
-node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-31 --force
+node scripts/upload-to-rss.mjs --start-date 2026-01-01 --end-date 2026-01-31 --force
 ```
 
 ### Upload Specific Date Range
@@ -179,7 +179,7 @@ node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-31
 Upload episodes within a specific date range:
 
 ```bash
-node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-15
+node scripts/upload-to-rss.mjs --start-date 2026-01-01 --end-date 2026-01-15
 ```
 
 ## Command Line Options
@@ -200,7 +200,7 @@ The script scans the episodes directory and looks for folders with the format `Y
 ### 2. Duplicate Detection
 
 Before uploading, the script:
-- Fetches all existing episodes from Podbean
+- Fetches all existing episodes from RSS.com
 - Checks if an episode with the same title or date already exists
 - Skips episodes that are already uploaded (unless `--force` is used)
 - Shows details of existing episodes when found
@@ -218,32 +218,32 @@ The script queries your Notion database for a page with a matching date and retr
 ### 5. Upload Process
 
 For each episode:
-1. **Authorization**: Gets an upload authorization URL from Podbean
-2. **Upload**: Uploads the audio file to Podbean's storage
-3. **Publish/Schedule**: Creates the episode on Podbean with:
+1. **Authorization**: Gets an upload authorization URL from RSS.com
+2. **Upload**: Uploads the audio file to RSS.com's storage
+3. **Publish/Schedule**: Creates the episode on RSS.com with:
    - Title from Notion
    - Audio file
    - Publication date at 6:00 AM (from folder name)
    - Status: 
      - **Draft** (scheduled) if date is in the future - will auto-publish at scheduled time
      - **Published** if date is today or in the past - publishes immediately
-4. **Update Notion**: Automatically updates the "Spotify Embed URI" field in Notion with the Podbean player URL
+4. **Update Notion**: Automatically updates the "Spotify Embed URI" field in Notion with the RSS.com player URL
 
 ### 6. Podcast Player Integration
 
 After successful upload, the script automatically:
-- Gets the Podbean player embed URL from the API response
+- Gets the RSS.com player embed URL from the API response
 - Updates the Notion page's "Spotify Embed URI" field with this URL
 - This URL is then used by the website's `PodcastPlayer` component to display the episode
 
-**Note:** Despite the field name "Spotify Embed URI", it works with any podcast embed URL (Podbean, Spotify, etc.). The `PodcastPlayer` component (formerly `SpotifyPlayer`) is generic and supports any iframe-based embed.
+**Note:** Despite the field name "Spotify Embed URI", it works with any podcast embed URL (RSS.com, Spotify, etc.). The `PodcastPlayer` component (formerly `SpotifyPlayer`) is generic and supports any iframe-based embed.
 
 ### 7. Smart Scheduling
 
 The script intelligently handles episode scheduling:
 
 - **Future Episodes** (date > today): Uploaded as **Draft** with scheduled publish time
-  - Episode will automatically publish on Podbean at the scheduled date/time
+  - Episode will automatically publish on RSS.com at the scheduled date/time
   - Status: Draft (scheduled)
   
 - **Past/Today Episodes** (date ≤ today): Uploaded as **Published** immediately
@@ -257,15 +257,15 @@ This ensures:
 
 ### 8. Rate Limiting
 
-The script automatically waits 2 seconds between uploads to avoid hitting Podbean's API rate limits.
+The script automatically waits 2 seconds between uploads to avoid hitting RSS.com's API rate limits.
 
 ## Output Example
 
 ```
-🚀 Podbean Episode Uploader
+🚀 RSS.com Episode Uploader
 
-🔑 Authenticating with Podbean...
-✅ Successfully authenticated with Podbean
+🔑 Authenticating with RSS.com...
+✅ Successfully authenticated with RSS.com
 
 📂 Scanning episodes directory: /Users/atti/Library/CloudStorage/GoogleDrive-...
 ✅ Found 10 episodes ready to upload
@@ -277,7 +277,7 @@ The script automatically waits 2 seconds between uploads to avoid hitting Podbea
 📝 Title: Strach z neznáma
 📤 Uploading audio file...
 ✅ Audio file uploaded successfully
-📝 Publishing episode on Podbean...
+📝 Publishing episode on RSS.com...
 ✅ Episode published successfully
 ✅ Successfully uploaded episode for 2026-01-01
 
@@ -296,12 +296,12 @@ The script automatically waits 2 seconds between uploads to avoid hitting Podbea
 
 ### Error: Authentication Failed
 
-**Problem**: Invalid Podbean credentials
+**Problem**: Invalid RSS.com credentials
 
 **Solution**:
-1. Verify your `PODBEAN_CLIENT_ID` and `PODBEAN_CLIENT_SECRET` in `.env.local`
-2. Make sure you copied them correctly from Podbean Developers Portal
-3. Check that your Podbean app is active
+1. Verify your `RSS_CLIENT_ID` and `RSS_CLIENT_SECRET` in `.env.local`
+2. Make sure you copied them correctly from RSS.com Developers Portal
+3. Check that your RSS.com app is active
 
 ### Error: No episode title found in Notion
 
@@ -324,28 +324,28 @@ The script automatically waits 2 seconds between uploads to avoid hitting Podbea
 
 ### Error: "File type not supported"
 
-**Problem**: Podbean rejected the audio file format
+**Problem**: RSS.com rejected the audio file format
 
 **Solution**:
-- Podbean only accepts MP3 and M4A formats
+- RSS.com only accepts MP3 and M4A formats
 - WAV files are NOT supported
 - Convert your WAV files to MP3: `npm run convert:wav`
 - Then try uploading again
 
 ### Error: Upload failed
 
-**Problem**: Network or Podbean API issue
+**Problem**: Network or RSS.com API issue
 
 **Solution**:
 1. Check your internet connection
-2. Verify the audio file is not too large (Podbean has size limits)
-3. Try again later if Podbean API is experiencing issues
+2. Verify the audio file is not too large (RSS.com has size limits)
+3. Try again later if RSS.com API is experiencing issues
 
 ## Podcast Player Options
 
-### Option 1: Podbean Embed (Current Default)
+### Option 1: RSS.com Embed (Current Default)
 
-The script automatically uses Podbean's embed player:
+The script automatically uses RSS.com's embed player:
 - ✅ **Immediate availability** - Works right after upload
 - ✅ **Automatic integration** - Script updates Notion automatically
 - ✅ **No additional setup** - Works out of the box
@@ -353,12 +353,12 @@ The script automatically uses Podbean's embed player:
 ### Option 2: Spotify Embed (Optional)
 
 If you prefer Spotify embeds:
-1. Submit your podcast to Spotify via Podbean
+1. Submit your podcast to Spotify via RSS.com
 2. Wait for episodes to sync to Spotify (can take hours/days)
 3. Manually get Spotify embed URIs for each episode
 4. Update Notion pages with Spotify URIs
 
-**Recommendation:** Start with Podbean embeds for immediate functionality. You can always switch to Spotify URIs later if desired.
+**Recommendation:** Start with RSS.com embeds for immediate functionality. You can always switch to Spotify URIs later if desired.
 
 ## Best Practices
 
@@ -382,13 +382,13 @@ crontab -e
 
 2. Add a line to run the script daily at 5:00 AM:
 ```cron
-0 5 * * * cd /Users/atti/Source/Repos/chliebnaskazdodenny-web && /usr/local/bin/node scripts/upload-to-podbean.mjs --skip-uploaded >> /tmp/podbean-upload.log 2>&1
+0 5 * * * cd /Users/atti/Source/Repos/chliebnaskazdodenny-web && /usr/local/bin/node scripts/upload-to-rss.mjs --skip-uploaded >> /tmp/rss-upload.log 2>&1
 ```
 
 This will:
 - Run at 5:00 AM every day
 - Skip already uploaded episodes
-- Log output to `/tmp/podbean-upload.log`
+- Log output to `/tmp/rss-upload.log`
 
 ## Support
 
@@ -397,21 +397,21 @@ If you encounter any issues:
 1. Check this guide's troubleshooting section
 2. Review the error messages in the console output
 3. Verify your environment variables are set correctly
-4. Check the [Podbean API Documentation](https://developers.podbean.com/podbean-api-docs/)
+4. Check the [RSS.com API Documentation](https://developers.rss.com/rss-api-docs/)
 
 ## Automatic Spotify Sync
 
-After uploading to Podbean, you can set up automatic syncing to Spotify embeds:
+After uploading to RSS.com, you can set up automatic syncing to Spotify embeds:
 
 1. **Setup**: Follow the [Spotify Sync Guide](./SPOTIFY_SYNC_GUIDE.md) to configure automatic syncing
 2. **How it Works**: A Vercel cron job runs daily and updates Notion pages with Spotify embeds
 3. **Timeline**:
-   - Day 0: Upload to Podbean → Immediate Podbean embed
+   - Day 0: Upload to RSS.com → Immediate RSS.com embed
    - Day 1-2: Episode syncs to Spotify automatically
    - Day 2+: Cron job detects episode on Spotify → Updates to Spotify embed
 
 **Benefits:**
-- ✅ Immediate episode availability (Podbean)
+- ✅ Immediate episode availability (RSS.com)
 - ✅ Automatic migration to Spotify embeds
 - ✅ No manual work required
 - ✅ Best listening experience for users

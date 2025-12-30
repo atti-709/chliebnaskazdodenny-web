@@ -1,9 +1,9 @@
-# Podbean Setup Checklist
+# RSS.com Setup Checklist
 
-## Step 1: Get Podbean API Credentials
+## Step 1: Get RSS.com API Credentials
 
-1. Go to [Podbean Developers Portal](https://developers.podbean.com/)
-2. Sign in with your Podbean account
+1. Go to [RSS.com Developers Portal](https://developers.rss.com/)
+2. Sign in with your RSS.com account
 3. Click on "My Apps" or "Create New App"
 4. Fill in the application details:
    - **App Name**: Chlieb náš každodenný Uploader
@@ -16,9 +16,9 @@
 Add the following lines to your `.env.local` file:
 
 ```env
-# Podbean API Credentials
-PODBEAN_CLIENT_ID=your_client_id_here
-PODBEAN_CLIENT_SECRET=your_client_secret_here
+# RSS.com API Credentials
+RSS_CLIENT_ID=your_client_id_here
+RSS_CLIENT_SECRET=your_client_secret_here
 ```
 
 Your `.env.local` file should now look like this:
@@ -28,9 +28,9 @@ Your `.env.local` file should now look like this:
 NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# Podbean API Credentials
-PODBEAN_CLIENT_ID=your_client_id_here
-PODBEAN_CLIENT_SECRET=your_client_secret_here
+# RSS.com API Credentials
+RSS_CLIENT_ID=your_client_id_here
+RSS_CLIENT_SECRET=your_client_secret_here
 ```
 
 ## Step 3: Test the Script
@@ -38,13 +38,13 @@ PODBEAN_CLIENT_SECRET=your_client_secret_here
 Run a dry run to test the script without actually uploading:
 
 ```bash
-npm run podbean:dry-run
+npm run rss:dry-run
 ```
 
 Or test with a specific date range:
 
 ```bash
-node scripts/upload-to-podbean.mjs --dry-run --start-date 2026-01-01 --end-date 2026-01-03
+node scripts/upload-to-rss.mjs --dry-run --start-date 2026-01-01 --end-date 2026-01-03
 ```
 
 ## Step 4: Upload Your First Episode
@@ -52,7 +52,7 @@ node scripts/upload-to-podbean.mjs --dry-run --start-date 2026-01-01 --end-date 
 Once the dry run looks good, upload your first episode:
 
 ```bash
-node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-01
+node scripts/upload-to-rss.mjs --start-date 2026-01-01 --end-date 2026-01-01
 ```
 
 ## Step 5: Upload All Episodes
@@ -60,18 +60,18 @@ node scripts/upload-to-podbean.mjs --start-date 2026-01-01 --end-date 2026-01-01
 To upload all episodes at once:
 
 ```bash
-npm run podbean:upload
+npm run rss:upload
 ```
 
 Or to skip episodes that are already uploaded:
 
 ```bash
-npm run podbean:upload-skip
+npm run rss:upload-skip
 ```
 
 ## Troubleshooting
 
-### Issue: "PODBEAN_CLIENT_ID and PODBEAN_CLIENT_SECRET must be set"
+### Issue: "RSS_CLIENT_ID and RSS_CLIENT_SECRET must be set"
 
 **Solution**: Make sure you've added the credentials to `.env.local` and they're not wrapped in quotes.
 
@@ -79,7 +79,7 @@ npm run podbean:upload-skip
 
 **Solution**: 
 - Verify your credentials are correct
-- Check that your Podbean app is active
+- Check that your RSS.com app is active
 - Try regenerating the client secret
 
 ### Issue: "No episode title found in Notion"
@@ -94,12 +94,12 @@ npm run podbean:upload-skip
 Once everything is working:
 
 1. Set up a cron job or scheduled task to run the upload script automatically
-2. See [PODBEAN_UPLOAD_GUIDE.md](./PODBEAN_UPLOAD_GUIDE.md) for detailed usage instructions
+2. See [RSS_UPLOAD_GUIDE.md](./RSS_UPLOAD_GUIDE.md) for detailed usage instructions
 3. Consider setting up notifications for upload success/failure
 
 ## Support
 
 For more detailed information, see:
-- [PODBEAN_UPLOAD_GUIDE.md](./PODBEAN_UPLOAD_GUIDE.md) - Complete usage guide
-- [Podbean API Documentation](https://developers.podbean.com/podbean-api-docs/)
+- [RSS_UPLOAD_GUIDE.md](./RSS_UPLOAD_GUIDE.md) - Complete usage guide
+- [RSS.com API Documentation](https://developers.rss.com/rss-api-docs/)
 
