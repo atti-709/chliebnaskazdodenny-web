@@ -7,7 +7,7 @@
 
 import fs from 'fs/promises'
 import path from 'path'
-import { getPresignedUploadUrl, uploadToPresignedUrl, createEpisodeWithAsset, findExistingEpisode } from './rss-api.js'
+import { getPresignedUploadUrl, uploadToPresignedUrl, createEpisodeWithAsset, findExistingEpisode, getDefaultKeywordIds, deleteEpisode } from './rss-api.js'
 import { getEpisodeFromNotion, updateNotionEmbedUri } from './notion-api.js'
 import { convertWAVtoMP3 } from './audio-converter.js'
 
@@ -18,9 +18,10 @@ import { convertWAVtoMP3 } from './audio-converter.js'
  * @param {string} filePath - Path to audio file
  * @param {string} title - Episode title
  * @param {string} date - Episode date (YYYY-MM-DD)
+ * @param {Object} options - Episode options (episodeNumber, seasonNumber, explicit)
  * @returns {Promise<Object>} Created episode data
  */
-export async function uploadAndCreateEpisode(filePath, title, date) {
+export async function uploadAndCreateEpisode(filePath, title, date, options = {}) {
   try {
     const fileName = path.basename(filePath)
     const stats = await fs.stat(filePath)
@@ -36,8 +37,8 @@ export async function uploadAndCreateEpisode(filePath, title, date) {
     const fileBuffer = await fs.readFile(filePath)
     await uploadToPresignedUrl(fileBuffer, presigned.uploadUrl)
     
-    // Step 3: Create episode with asset ID
-    const episode = await createEpisodeWithAsset(presigned.assetId, title, date)
+    // Step 3: Create episode with asset ID and iTunes metadata
+    const episode = await createEpisodeWithAsset(presigned.assetId, title, date, options)
     
     return episode
   } catch (error) {
@@ -101,13 +102,16 @@ export async function uploadEpisode(episode, options = {}) {
     console.log(`📁 Folder: ${episode.folderName}`)
     console.log(`📄 File: ${episode.audioFile} (${episode.fileSizeMB} MB)`)
     
-    // Fetch episode data from Notion
-    const notionEpisode = await getEpisodeFromNotion(episode.date)
+    // Fetch episode data from Notion (with episode number)
+    const notionEpisode = await getEpisodeFromNotion(episode.date, true)
     if (!notionEpisode || !notionEpisode.title) {
       throw new Error(`No episode found in Notion for date ${episode.date}`)
     }
     
     console.log(`📝 Title: ${notionEpisode.title}`)
+    if (notionEpisode.episodeNumber) {
+      console.log(`📊 Episode Number: ${notionEpisode.episodeNumber}`)
+    }
     
     // Check if episode already exists on RSS.com
     if (options.existingEpisodes) {
@@ -127,9 +131,18 @@ export async function uploadEpisode(episode, options = {}) {
         console.log(`   URL: ${existingEpisode.link || existingEpisode.permalink || existingEpisode.url || 'N/A'}`)
         
         if (options.force) {
-          console.log('⚡ --force flag detected - uploading anyway (will create duplicate)')
+          console.log('⚡ --force flag detected - deleting existing episode and re-uploading')
+          
+          // Delete the existing episode
+          const deleted = await deleteEpisode(existingEpisode.id)
+          if (!deleted) {
+            throw new Error('Failed to delete existing episode')
+          }
+          
+          // Wait a moment for deletion to propagate
+          await new Promise(resolve => setTimeout(resolve, 2000))
         } else {
-          console.log('⏭️  Skipping (use --force to upload anyway)')
+          console.log('⏭️  Skipping (use --force to delete and re-upload)')
           return { success: true, skipped: true, reason: 'already_exists' }
         }
       }
@@ -147,8 +160,23 @@ export async function uploadEpisode(episode, options = {}) {
     // Handle WAV conversion if needed
     const uploadFilePath = await prepareAudioFile(episode)
     
+    // Get keyword IDs (will create keywords if they don't exist)
+    console.log('🏷️  Getting keyword IDs...')
+    const keywordIds = await getDefaultKeywordIds()
+    if (keywordIds.length > 0) {
+      console.log(`   ✓ Got ${keywordIds.length} keyword IDs`)
+    }
+    
+    // Prepare iTunes metadata
+    const itunesOptions = {
+      episodeNumber: notionEpisode.episodeNumber,
+      seasonNumber: 1, // Default season 1
+      explicit: false, // Not explicit content
+      keywordIds: keywordIds, // RSS.com keyword IDs
+    }
+    
     // Upload and create episode on RSS.com (combined operation)
-    const result = await uploadAndCreateEpisode(uploadFilePath, notionEpisode.title, episode.date)
+    const result = await uploadAndCreateEpisode(uploadFilePath, notionEpisode.title, episode.date, itunesOptions)
     
     // Update Notion with embed URL only if episode is published
     // (scheduled episodes show "not available" error in the player)

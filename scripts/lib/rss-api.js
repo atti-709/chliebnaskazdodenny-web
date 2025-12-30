@@ -11,7 +11,7 @@ import { rssConfig } from './config.js'
  * Makes a request to RSS.com API
  * @param {string} endpoint - API endpoint (e.g., '/podcasts/123')
  * @param {Object} options - Request options
- * @returns {Promise<Object>} Response data
+ * @returns {Promise<Object|null>} Response data (null for 204 No Content)
  */
 async function rssRequest(endpoint, options = {}) {
   const response = await fetch(`${rssConfig.apiBase}${endpoint}`, {
@@ -29,7 +29,74 @@ async function rssRequest(endpoint, options = {}) {
     throw new Error(`RSS.com API error (${response.status}): ${errorText}`)
   }
 
-  return response.json()
+  // Handle 204 No Content (common for DELETE requests)
+  if (response.status === 204) {
+    return null
+  }
+
+  // Handle empty responses
+  const text = await response.text()
+  if (!text) {
+    return null
+  }
+
+  return JSON.parse(text)
+}
+
+/**
+ * Gets or creates keywords and returns their IDs
+ * @param {string[]} keywords - Array of keyword strings
+ * @returns {Promise<number[]>} Array of keyword IDs
+ */
+async function getOrCreateKeywordIds(keywords) {
+  try {
+    // Fetch existing keywords
+    const existingKeywords = await rssRequest(`/podcasts/${rssConfig.podcastId}/keywords`)
+    const keywordsList = existingKeywords.items || existingKeywords.data || existingKeywords || []
+    
+    const keywordIds = []
+    
+    for (const keyword of keywords) {
+      // Check if keyword already exists (RSS.com uses 'label' field)
+      const existing = keywordsList.find(k => k.label === keyword || k.name === keyword || k.keyword === keyword)
+      
+      if (existing) {
+        keywordIds.push(existing.id)
+      } else {
+        // Create new keyword (RSS.com API uses 'label' field)
+        try {
+          const newKeyword = await rssRequest(`/podcasts/${rssConfig.podcastId}/keywords`, {
+            method: 'POST',
+            body: { label: keyword }, // Changed from 'name' to 'label'
+          })
+          keywordIds.push(newKeyword.id)
+        } catch (error) {
+          console.error(`⚠️  Could not create keyword "${keyword}":`, error.message)
+        }
+      }
+    }
+    
+    return keywordIds
+  } catch (error) {
+    console.error('⚠️  Error managing keywords:', error.message)
+    return []
+  }
+}
+
+/**
+ * Gets keyword IDs for default podcast keywords
+ * @returns {Promise<number[]>} Array of keyword IDs
+ */
+export async function getDefaultKeywordIds() {
+  const keywords = [
+    'chliebnaskazdodenny',
+    'zamyslenie',
+    'kazdyden',
+    'Boh',
+    'stisenie',
+  ]
+  
+  return await getOrCreateKeywordIds(keywords)
 }
 
 /**
@@ -59,12 +126,14 @@ export async function testCredentials() {
 
 /**
  * Gets list of existing episodes from RSS.com
- * @param {number} limit - Maximum number of episodes to fetch
+ * @param {number} limit - Maximum number of episodes to fetch (max 100 per request)
  * @returns {Promise<Array>} Array of existing episodes
  */
-export async function getExistingEpisodes(limit = 360) {
+export async function getExistingEpisodes(limit = 100) {
   try {
-    const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${limit}`)
+    // RSS.com API has a maximum limit of 100 per request
+    const actualLimit = Math.min(limit, 100)
+    const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${actualLimit}`)
     
     // RSS.com v4 API returns episodes as root array, not wrapped in object
     if (Array.isArray(data)) {
@@ -99,6 +168,27 @@ export function findExistingEpisode(existingEpisodes, title, date) {
     const episodeDateStr = episodeDate ? new Date(episodeDate).toISOString().split('T')[0] : null
     return episode.title === title || episodeDateStr === date
   })
+}
+
+/**
+ * Deletes an episode from RSS.com
+ * @param {number|string} episodeId - Episode ID to delete
+ * @returns {Promise<boolean>} True if deletion successful
+ */
+export async function deleteEpisode(episodeId) {
+  try {
+    console.log(`🗑️  Deleting existing episode (ID: ${episodeId})...`)
+    
+    await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes/${episodeId}`, {
+      method: 'DELETE',
+    })
+    
+    console.log('✅ Episode deleted successfully')
+    return true
+  } catch (error) {
+    console.error('❌ Error deleting episode:', error.message)
+    return false
+  }
 }
 
 /**
@@ -180,9 +270,13 @@ export async function uploadToPresignedUrl(fileBuffer, presignedUrl) {
  * @param {string} audioId - Audio asset ID from presigned upload
  * @param {string} title - Episode title
  * @param {string} date - Episode date (YYYY-MM-DD)
+ * @param {Object} options - Additional episode options
+ * @param {number} options.episodeNumber - iTunes episode number
+ * @param {number} options.seasonNumber - iTunes season number (default: 1)
+ * @param {boolean} options.explicit - iTunes explicit flag (default: false)
  * @returns {Promise<Object>} Created episode data
  */
-export async function createEpisodeWithAsset(audioId, title, date) {
+export async function createEpisodeWithAsset(audioId, title, date, options = {}) {
   try {
     console.log('📝 Step 3: Creating episode with audio asset...')
 
@@ -198,18 +292,37 @@ export async function createEpisodeWithAsset(audioId, title, date) {
       console.log(`   Publishing on: ${publishDate.toLocaleString()}`)
     }
 
+    // Create episode description
+    const description = `Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň. 
+📖 Toto zamyslenie nájdeš ja na našom webe www.chliebnaskazdodenny.sk
+#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie`
+
     const episodeData = {
       title: title,
-      description: title,
+      description: description,
       audio_upload_id: audioId,
       schedule_datetime: publishISO,
+      itunes_explicit: options.explicit ?? false,
+      itunes_episode: options.episodeNumber || null,
+      itunes_season: options.seasonNumber ?? 1,
+    }
+    
+    // Add keyword IDs if provided
+    if (options.keywordIds && options.keywordIds.length > 0) {
+      episodeData.keyword_ids = options.keywordIds
     }
 
     console.log('   Episode data:')
     console.log(`     title: "${title}"`)
-    console.log(`     description: "${title}"`)
+    console.log(`     description: "${description.substring(0, 50)}..."`)
     console.log(`     audio_upload_id: "${audioId}"`)
     console.log(`     schedule_datetime: "${publishISO}"`)
+    console.log(`     itunes_explicit: ${episodeData.itunes_explicit}`)
+    console.log(`     itunes_episode: ${episodeData.itunes_episode || 'not set'}`)
+    console.log(`     itunes_season: ${episodeData.itunes_season}`)
+    if (episodeData.keyword_ids) {
+      console.log(`     keyword_ids: [${episodeData.keyword_ids.join(', ')}]`)
+    }
 
     const response = await fetch(`${rssConfig.apiBase}/podcasts/${rssConfig.podcastId}/episodes`, {
       method: 'POST',

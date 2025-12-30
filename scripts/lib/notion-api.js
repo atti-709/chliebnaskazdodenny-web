@@ -36,9 +36,10 @@ async function notionRequest(endpoint, options = {}) {
 /**
  * Fetches episode data from Notion by date
  * @param {string} date - Episode date (YYYY-MM-DD)
+ * @param {boolean} includeEpisodeNumber - Whether to calculate episode number
  * @returns {Promise<Object|null>} Episode data or null if not found
  */
-export async function getEpisodeFromNotion(date) {
+export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
   try {
     const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, {
       body: {
@@ -59,13 +60,55 @@ export async function getEpisodeFromNotion(date) {
     const titleProperty = page.properties.Title?.title || page.properties.title?.title
     const title = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
     
-    return {
+    const result = {
       pageId: page.id,
       title: title,
     }
+    
+    // Calculate episode number if requested
+    if (includeEpisodeNumber) {
+      const episodeNumber = await getEpisodeNumber(date)
+      result.episodeNumber = episodeNumber
+    }
+    
+    return result
   } catch (error) {
     console.error(`❌ Error fetching episode from Notion for date ${date}:`, error.message)
     return null
+  }
+}
+
+/**
+ * Calculates the episode number based on date ordering in Notion
+ * @param {string} targetDate - Episode date (YYYY-MM-DD)
+ * @returns {Promise<number>} Episode number (1-based)
+ */
+async function getEpisodeNumber(targetDate) {
+  try {
+    // Fetch all episodes sorted by date ascending
+    const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, {
+      body: {
+        sorts: [
+          {
+            property: 'Date',
+            direction: 'ascending',
+          },
+        ],
+        page_size: 100, // Adjust if you have more episodes
+      },
+    })
+    
+    // Find the position of the target date
+    const episodeIndex = response.results.findIndex(page => {
+      const dateProperty = page.properties.Date?.date?.start || page.properties.date?.date?.start
+      return dateProperty && dateProperty.split('T')[0] === targetDate
+    })
+    
+    // Episode number is index + 1 (1-based)
+    return episodeIndex >= 0 ? episodeIndex + 1 : 1
+  } catch (error) {
+    console.error('❌ Error calculating episode number:', error.message)
+    return 1 // Default to 1 if calculation fails
   }
 }
 
