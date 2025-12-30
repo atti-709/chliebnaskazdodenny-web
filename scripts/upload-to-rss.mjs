@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /**
- * RSS.com Episode Uploader
+ * RSS.com Episode Uploader CLI
  * 
  * This script automates the process of uploading podcast episodes to RSS.com.
  * It scans a local directory for episodes with FINAL folders, fetches episode
@@ -23,619 +23,39 @@
  *   NOTION_DATABASE_ID      - Notion database ID for episodes
  */
 
-import fs from 'fs/promises'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { spawn } from 'child_process'
-import dotenv from 'dotenv'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-dotenv.config({ path: path.join(__dirname, '..', '.env.local') })
-
-// Environment variables
-const RSS_API_KEY = process.env.RSS_API_KEY
-const RSS_PODCAST_ID = process.env.RSS_PODCAST_ID
-const NOTION_API_KEY = process.env.NOTION_API_KEY
-const DATABASE_ID = process.env.NOTION_DATABASE_ID
-const NOTION_VERSION = '2022-06-28'
-
-// Configuration
-const EPISODES_PATH = '/Users/atti/Library/CloudStorage/GoogleDrive-xzsiros@gmail.com/Shared drives/Chlieb náš každodenný/EPIZÓDY'
-const RSS_API_BASE = 'https://api.rss.com/v4'
-
-// Validate environment variables
-if (!RSS_API_KEY || !RSS_PODCAST_ID) {
-  console.error('❌ Error: RSS_API_KEY and RSS_PODCAST_ID must be set in .env.local')
-  console.error('\nTo get these credentials:')
-  console.error('1. Log in to your RSS.com account')
-  console.error('2. Go to Settings → API Access')
-  console.error('3. Generate an API key')
-  console.error('4. Find your Podcast ID in your podcast settings')
-  process.exit(1)
-}
-
-if (!NOTION_API_KEY || !DATABASE_ID) {
-  console.error('❌ Error: NOTION_API_KEY and NOTION_DATABASE_ID must be set in .env.local')
-  process.exit(1)
-}
-
-// Debug: Show first/last few characters of credentials (for troubleshooting)
-console.log('🔐 Credentials loaded:')
-console.log(`   API Key: ${RSS_API_KEY.substring(0, 8)}...${RSS_API_KEY.substring(RSS_API_KEY.length - 4)}`)
-console.log(`   Podcast ID: ${RSS_PODCAST_ID}`)
+import { validateAllConfig } from './lib/config.js'
+import { testCredentials, getExistingEpisodes } from './lib/rss-api.js'
+import { checkFFmpeg } from './lib/audio-converter.js'
+import { scanEpisodesDirectory } from './lib/episode-scanner.js'
+import { uploadEpisode } from './lib/episode-uploader.js'
 
 /**
- * Makes a request to RSS.com API
+ * Parses command line arguments
+ * @returns {Object} Parsed options
  */
-async function rssRequest(endpoint, options = {}) {
-  const response = await fetch(`${RSS_API_BASE}${endpoint}`, {
-    method: options.method || 'GET',
-    headers: {
-      'X-Api-Key': RSS_API_KEY,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`RSS.com API error (${response.status}): ${errorText}`)
-  }
-
-  return response.json()
-}
-
-/**
- * Makes a request to Notion API
- */
-async function notionRequest(endpoint, options = {}) {
-  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
-    method: options.method || 'POST',
-    headers: {
-      Authorization: `Bearer ${NOTION_API_KEY}`,
-      'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Notion API error (${response.status}): ${errorText}`)
-  }
-
-  return response.json()
-}
-
-/**
- * Fetches episode data from Notion by date
- */
-async function getEpisodeFromNotion(date) {
-  try {
-    const response = await notionRequest(`/databases/${DATABASE_ID}/query`, {
-      body: {
-        filter: {
-          property: 'Date',
-          date: {
-            equals: date,
-          },
-        },
-      },
-    })
-
-    if (response.results.length === 0) {
-      return null
-    }
-
-    const page = response.results[0]
-    const titleProperty = page.properties.Title?.title || page.properties.title?.title
-    const title = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
-    
-    return {
-      pageId: page.id,
-      title: title,
-    }
-  } catch (error) {
-    console.error(`❌ Error fetching episode from Notion for date ${date}:`, error.message)
-    return null
+function parseArgs() {
+  const args = process.argv.slice(2)
+  
+  return {
+    dryRun: args.includes('--dry-run'),
+    startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
+    endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
+    force: args.includes('--force'),
   }
 }
 
 /**
- * Updates the Spotify Embed URI field in Notion page
+ * Prints upload summary
  */
-async function updateNotionEmbedUri(pageId, embedUri) {
-  try {
-    console.log('📝 Updating Notion with embed URI...')
-    
-    await notionRequest(`/pages/${pageId}`, {
-      method: 'PATCH',
-      body: {
-        properties: {
-          'Spotify Embed URI': {
-            url: embedUri,
-          },
-        },
-      },
-    })
-
-    console.log('✅ Notion page updated with embed URI')
-    return true
-  } catch (error) {
-    console.error('❌ Error updating Notion page:', error.message)
-    return false
+function printSummary(successCount, skipCount, failCount, totalCount) {
+  console.log(`\n${'='.repeat(60)}`)
+  console.log('📊 Upload Summary:')
+  console.log(`✅ Success: ${successCount}`)
+  if (skipCount > 0) {
+    console.log(`⏭️  Skipped: ${skipCount}`)
   }
-}
-
-/**
- * Extracts date from folder name (format: YYYYMMDD_episode_name)
- */
-function extractDateFromFolderName(folderName) {
-  const match = folderName.match(/^(\d{4})(\d{2})(\d{2})_/)
-  if (match) {
-    return `${match[1]}-${match[2]}-${match[3]}`
-  }
-  return null
-}
-
-/**
- * Checks if ffmpeg is installed
- */
-async function checkFFmpeg() {
-  return new Promise((resolve) => {
-    const ffmpeg = spawn('ffmpeg', ['-version'])
-    
-    ffmpeg.on('error', () => {
-      resolve(false)
-    })
-    
-    ffmpeg.on('close', (code) => {
-      resolve(code === 0)
-    })
-  })
-}
-
-/**
- * Converts WAV file to MP3 using ffmpeg
- */
-async function convertWAVtoMP3(wavPath, mp3Path) {
-  return new Promise((resolve, reject) => {
-    console.log('🔄 Converting WAV to MP3...')
-    
-    const ffmpeg = spawn('ffmpeg', [
-      '-i', wavPath,           // Input file
-      '-codec:a', 'libmp3lame', // MP3 encoder
-      '-b:a', '128k',           // Constant bitrate 128 kbps
-      '-y',                     // Overwrite if exists
-      mp3Path                   // Output file
-    ])
-    
-    ffmpeg.stderr.on('data', () => {
-      // Suppress ffmpeg output
-    })
-    
-    ffmpeg.on('close', (code) => {
-      if (code === 0) {
-        resolve()
-      } else {
-        reject(new Error(`ffmpeg conversion failed with code ${code}`))
-      }
-    })
-    
-    ffmpeg.on('error', (err) => {
-      reject(err)
-    })
-  })
-}
-
-/**
- * Scans the episodes directory for episodes ready to upload
- */
-async function scanEpisodesDirectory(options = {}) {
-  try {
-    console.log('📂 Scanning episodes directory:', EPISODES_PATH)
-    
-    const entries = await fs.readdir(EPISODES_PATH, { withFileTypes: true })
-    const episodes = []
-
-    for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith('.')) {
-        continue
-      }
-
-      const episodePath = path.join(EPISODES_PATH, entry.name)
-      const finalPath = path.join(episodePath, 'FINAL')
-
-      // Check if FINAL folder exists
-      try {
-        await fs.access(finalPath)
-      } catch {
-        // No FINAL folder, skip this episode
-        continue
-      }
-
-      // Check for audio file in FINAL folder
-      const finalFiles = await fs.readdir(finalPath)
-      let audioFile = finalFiles.find(file => 
-        file.endsWith('.mp3') || 
-        file.endsWith('.m4a')
-      )
-
-      // If no MP3/M4A found, check for WAV and mark for conversion
-      let needsConversion = false
-      if (!audioFile) {
-        const wavFile = finalFiles.find(file => file.endsWith('.wav'))
-        if (wavFile) {
-          audioFile = wavFile
-          needsConversion = true
-        } else {
-          console.log(`⚠️  No audio file found in ${entry.name}/FINAL`)
-          console.log(`   Supported formats: MP3, M4A, WAV (will auto-convert)`)
-          continue
-        }
-      }
-
-      // Extract date from folder name
-      const date = extractDateFromFolderName(entry.name)
-      if (!date) {
-        console.log(`⚠️  Could not extract date from folder name: ${entry.name}`)
-        continue
-      }
-
-      // Apply date filters
-      if (options.startDate && date < options.startDate) {
-        continue
-      }
-      if (options.endDate && date > options.endDate) {
-        continue
-      }
-
-      const audioFilePath = path.join(finalPath, audioFile)
-      const stats = await fs.stat(audioFilePath)
-
-      episodes.push({
-        date,
-        folderName: entry.name,
-        audioFile: audioFile,
-        audioFilePath: audioFilePath,
-        fileSize: stats.size,
-        fileSizeMB: (stats.size / (1024 * 1024)).toFixed(2),
-        needsConversion: needsConversion,
-      })
-    }
-
-    // Sort by date
-    episodes.sort((a, b) => a.date.localeCompare(b.date))
-
-    console.log(`✅ Found ${episodes.length} episodes ready to upload`)
-    return episodes
-  } catch (error) {
-    console.error('❌ Error scanning episodes directory:', error.message)
-    throw error
-  }
-}
-
-/**
- * Step 1: Get presigned upload URL from RSS.com
- */
-async function getPresignedUploadUrl(fileName, fileSize) {
-  try {
-    console.log('📝 Step 1: Requesting presigned upload URL...')
-    console.log(`   File: ${fileName}`)
-    console.log(`   Size: ${(fileSize / (1024 * 1024)).toFixed(2)} MB`)
-
-    const response = await fetch(`${RSS_API_BASE}/podcasts/${RSS_PODCAST_ID}/assets/presigned-uploads`, {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': RSS_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filename: fileName,
-        asset_type: 'audio',
-        expected_mime: 'audio/mpeg',
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Presigned URL request failed (${response.status}): ${errorText}`)
-    }
-
-    const data = await response.json()
-    console.log(`✅ Presigned upload URL received`)
-    console.log(`   Asset ID: ${data.id || data.asset_id || data.assetId}`)
-    
-    return {
-      uploadUrl: data.upload_url || data.uploadUrl || data.url,
-      assetId: data.id || data.asset_id || data.assetId,
-      ...data
-    }
-  } catch (error) {
-    console.error('❌ Error getting presigned URL:', error.message)
-    throw error
-  }
-}
-
-/**
- * Step 2: Upload audio file to presigned URL (S3)
- */
-async function uploadToPresignedUrl(filePath, presignedUrl) {
-  try {
-    console.log('📤 Step 2: Uploading file to S3...')
-    
-    const fileBuffer = await fs.readFile(filePath)
-    
-    const response = await fetch(presignedUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'audio/mpeg',
-      },
-      body: fileBuffer,
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`S3 upload failed (${response.status}): ${errorText}`)
-    }
-
-    console.log(`✅ File uploaded to S3 successfully`)
-  } catch (error) {
-    console.error('❌ Error uploading to S3:', error.message)
-    throw error
-  }
-}
-
-/**
- * Step 3: Create episode with audio asset ID
- */
-async function createEpisodeWithAsset(audioId, title, date) {
-  try {
-    console.log('📝 Step 3: Creating episode with audio asset...')
-
-    // Convert date to ISO format for RSS.com
-    const publishDate = new Date(date + 'T06:00:00')
-    const publishISO = publishDate.toISOString()
-    const now = new Date()
-    const isFuture = publishDate > now
-    
-    if (isFuture) {
-      console.log(`   Scheduling for: ${publishDate.toLocaleString()}`)
-    } else {
-      console.log(`   Publishing on: ${publishDate.toLocaleString()}`)
-    }
-
-    // Create episode with JSON body
-    const episodeData = {
-      title: title,
-      description: title,  // Use title as description for now
-      audio_upload_id: audioId,  // Changed from audio_id to asset_id
-      schedule_datetime: publishISO,
-    }
-
-    console.log('   Episode data:')
-    console.log(`     title: "${title}"`)
-    console.log(`     description: "${title}"`)
-    console.log(`     audio_upload_id: "${audioId}"`)
-    console.log(`     schedule_datetime: "${publishISO}"`)
-
-    const response = await fetch(`${RSS_API_BASE}/podcasts/${RSS_PODCAST_ID}/episodes`, {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': RSS_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(episodeData),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`   Response status: ${response.status}`)
-      console.error(`   Response error: ${errorText}`)
-      throw new Error(`Episode creation failed (${response.status}): ${errorText}`)
-    }
-
-    const data = await response.json()
-    console.log('✅ Episode created successfully')
-    
-    return {
-      episodeId: data.id || data.episode?.id,
-      playerUrl: data.player_url || data.episode?.player_url || data.url,
-      permalink: data.permalink || data.episode?.permalink || data.url,
-      ...data
-    }
-  } catch (error) {
-    console.error('❌ Error creating episode:', error.message)
-    throw error
-  }
-}
-
-/**
- * Uploads audio file and creates episode (three-step presigned upload process)
- */
-async function uploadAndCreateEpisode(filePath, title, date) {
-  try {
-    const fileName = path.basename(filePath)
-    const stats = await fs.stat(filePath)
-    
-    console.log('📤 Uploading audio file to RSS.com...')
-    console.log(`   File: ${fileName}`)
-    console.log(`   Size: ${(stats.size / (1024 * 1024)).toFixed(2)} MB`)
-    
-    // Step 1: Get presigned upload URL
-    const presigned = await getPresignedUploadUrl(fileName, stats.size)
-    
-    // Step 2: Upload file to S3 using presigned URL
-    await uploadToPresignedUrl(filePath, presigned.uploadUrl)
-    
-    // Step 3: Create episode with asset ID
-    const episode = await createEpisodeWithAsset(presigned.assetId, title, date)
-    
-    return episode
-  } catch (error) {
-    console.error('❌ Error in upload process:', error.message)
-    throw error
-  }
-}
-
-// publishEpisode function is now combined with upload in uploadAndCreateEpisode
-
-/**
- * Tests API credentials by attempting to fetch podcast info
- */
-async function testCredentials() {
-  try {
-    console.log('🔍 Testing API credentials...')
-    const data = await rssRequest(`/podcasts/${RSS_PODCAST_ID}`)
-    console.log(`✅ Credentials valid - Connected to podcast: ${data.title || data.name || 'Unknown'}`)
-    return true
-  } catch (error) {
-    console.error('❌ Credential test failed:', error.message)
-    console.error('\n⚠️  Possible issues:')
-    console.error('   1. API key is incorrect or expired')
-    console.error('   2. Podcast ID is incorrect or doesn\'t belong to this API key')
-    console.error('   3. API key doesn\'t have permissions for this podcast')
-    console.error('\n📝 To fix:')
-    console.error('   1. Log in to RSS.com')
-    console.error('   2. Check your API key in Settings → API Access')
-    console.error('   3. Verify your Podcast ID in your podcast settings')
-    console.error('   4. Update .env.local with the correct values')
-    return false
-  }
-}
-
-/**
- * Gets list of existing episodes from RSS.com
- */
-async function getExistingEpisodes() {
-  try {
-    // Use the correct RSS.com v4 API endpoint for listing episodes
-    const data = await rssRequest(`/podcasts/${RSS_PODCAST_ID}/episodes?limit=360`)
-    return data.items || data.data || data.episodes || []
-  } catch (error) {
-    console.error('⚠️  Could not fetch existing episodes:', error.message)
-    console.error('   Continuing without duplicate detection...')
-    return []
-  }
-}
-
-
-/**
- * Finds existing episode on RSS.com by title and date
- */
-function findExistingEpisode(existingEpisodes, title, date) {
-  return existingEpisodes.find(episode => {
-    // RSS.com v4 API uses camelCase: publishedAt
-    const episodeDate = episode.publishedAt || episode.published_at || episode.date
-    const episodeDateStr = episodeDate ? new Date(episodeDate).toISOString().split('T')[0] : null
-    return episode.title === title || episodeDateStr === date
-  })
-}
-
-/**
- * Uploads a single episode to Podbean
- */
-async function uploadEpisode(episode, options = {}) {
-  try {
-    console.log(`\n${'='.repeat(60)}`)
-    console.log(`📅 Processing episode for ${episode.date}`)
-    console.log(`📁 Folder: ${episode.folderName}`)
-    console.log(`📄 File: ${episode.audioFile} (${episode.fileSizeMB} MB)`)
-    
-    // Fetch episode data from Notion
-    const notionEpisode = await getEpisodeFromNotion(episode.date)
-    if (!notionEpisode || !notionEpisode.title) {
-      throw new Error(`No episode found in Notion for date ${episode.date}`)
-    }
-    
-    console.log(`📝 Title: ${notionEpisode.title}`)
-    
-    // Check if episode already exists on RSS.com
-    if (options.existingEpisodes) {
-      const existingEpisode = findExistingEpisode(
-        options.existingEpisodes,
-        notionEpisode.title,
-        episode.date
-      )
-      
-      if (existingEpisode) {
-        const episodeDate = existingEpisode.publishedAt || existingEpisode.published_at || existingEpisode.date
-        const existingDateStr = episodeDate ? new Date(episodeDate).toISOString().split('T')[0] : 'unknown'
-        
-        console.log(`⚠️  Episode already exists on RSS.com:`)
-        console.log(`   Title: ${existingEpisode.title}`)
-        console.log(`   Published: ${existingDateStr}`)
-        console.log(`   URL: ${existingEpisode.link || existingEpisode.permalink || existingEpisode.url || 'N/A'}`)
-        
-        if (options.force) {
-          console.log('⚡ --force flag detected - uploading anyway (will create duplicate)')
-        } else {
-          console.log('⏭️  Skipping (use --force to upload anyway)')
-          return { success: true, skipped: true, reason: 'already_exists' }
-        }
-      }
-    }
-    
-    if (options.dryRun) {
-      if (episode.needsConversion) {
-        console.log('🏃 DRY RUN - Would convert WAV to MP3 and upload')
-      } else {
-        console.log('🏃 DRY RUN - Would upload this episode')
-      }
-      return { success: true, dryRun: true }
-    }
-    
-    // Handle WAV conversion if needed
-    let uploadFilePath = episode.audioFilePath
-    
-    if (episode.needsConversion) {
-      console.log('⚠️  WAV format detected - converting to MP3...')
-      
-      // Generate MP3 path
-      const mp3FileName = episode.audioFile.replace(/\.wav$/i, '.mp3')
-      const mp3FilePath = path.join(path.dirname(episode.audioFilePath), mp3FileName)
-      
-      // Check if MP3 already exists
-      try {
-        await fs.access(mp3FilePath)
-        console.log('✅ MP3 file already exists - using existing file')
-      } catch {
-        // Need to convert
-        try {
-          await convertWAVtoMP3(episode.audioFilePath, mp3FilePath)
-          console.log('✅ Conversion complete')
-        } catch (conversionError) {
-          throw new Error(`Failed to convert WAV to MP3: ${conversionError.message}`)
-        }
-      }
-      
-      // Update file info for upload
-      const mp3Stats = await fs.stat(mp3FilePath)
-      uploadFilePath = mp3FilePath
-      
-      console.log(`📄 Using MP3: ${mp3FileName} (${(mp3Stats.size / (1024 * 1024)).toFixed(2)} MB)`)
-    }
-    
-    // Upload and create episode on RSS.com (combined operation)
-    const result = await uploadAndCreateEpisode(uploadFilePath, notionEpisode.title, episode.date)
-    
-    // Update Notion with embed URL if available
-    if (result.playerUrl) {
-      await updateNotionEmbedUri(notionEpisode.pageId, result.playerUrl)
-    } else {
-      console.log('⚠️  No player URL available from RSS.com API')
-    }
-    
-    console.log(`✅ Successfully uploaded episode for ${episode.date}`)
-    return { success: true, data: result }
-  } catch (error) {
-    console.error(`❌ Failed to upload episode for ${episode.date}:`, error.message)
-    return { success: false, error: error.message }
-  }
+  console.log(`❌ Failed: ${failCount}`)
+  console.log(`📝 Total: ${totalCount}`)
 }
 
 /**
@@ -643,16 +63,14 @@ async function uploadEpisode(episode, options = {}) {
  */
 async function main() {
   try {
-    const args = process.argv.slice(2)
-    
-    const options = {
-      dryRun: args.includes('--dry-run'),
-      startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
-      endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
-      force: args.includes('--force'),
-    }
-    
     console.log('🚀 RSS.com Episode Uploader\n')
+    
+    // Validate configuration
+    validateAllConfig()
+    console.log('')
+    
+    // Parse command line arguments
+    const options = parseArgs()
     
     if (options.dryRun) {
       console.log('🏃 DRY RUN MODE - No episodes will be uploaded\n')
@@ -716,15 +134,8 @@ async function main() {
       }
     }
     
-    // Summary
-    console.log(`\n${'='.repeat(60)}`)
-    console.log('📊 Upload Summary:')
-    console.log(`✅ Success: ${successCount}`)
-    if (skipCount > 0) {
-      console.log(`⏭️  Skipped: ${skipCount}`)
-    }
-    console.log(`❌ Failed: ${failCount}`)
-    console.log(`📝 Total: ${episodes.length}`)
+    // Print summary
+    printSummary(successCount, skipCount, failCount, episodes.length)
     
   } catch (error) {
     console.error('\n💥 Upload failed:', error.message)

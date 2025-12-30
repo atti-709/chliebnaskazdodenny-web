@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Configuration Management
  * 
@@ -13,19 +14,6 @@ const __dirname = path.dirname(__filename)
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local') })
-
-/**
- * Validates that required environment variables are set
- * @param {string[]} requiredVars - Array of required variable names
- * @throws {Error} If any required variables are missing
- */
-function validateEnvVars(requiredVars) {
-  const missing = requiredVars.filter(varName => !process.env[varName])
-  
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`)
-  }
-}
 
 /**
  * RSS.com API configuration
