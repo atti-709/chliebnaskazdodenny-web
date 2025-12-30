@@ -14,7 +14,7 @@
  *   --dry-run          Show what would be uploaded without actually uploading
  *   --start-date       Start date (YYYY-MM-DD) for episodes to upload
  *   --end-date         End date (YYYY-MM-DD) for episodes to upload
- *   --skip-uploaded    Skip episodes that are already uploaded to Podbean
+ *   --force            Upload even if episode already exists (creates duplicate)
  * 
  * Environment Variables (add to .env.local):
  *   PODBEAN_CLIENT_ID       - Podbean API client ID
@@ -26,6 +26,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { spawn } from 'child_process'
 import dotenv from 'dotenv'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -221,6 +222,56 @@ function extractDateFromFolderName(folderName) {
 }
 
 /**
+ * Checks if ffmpeg is installed
+ */
+async function checkFFmpeg() {
+  return new Promise((resolve) => {
+    const ffmpeg = spawn('ffmpeg', ['-version'])
+    
+    ffmpeg.on('error', () => {
+      resolve(false)
+    })
+    
+    ffmpeg.on('close', (code) => {
+      resolve(code === 0)
+    })
+  })
+}
+
+/**
+ * Converts WAV file to MP3 using ffmpeg
+ */
+async function convertWAVtoMP3(wavPath, mp3Path) {
+  return new Promise((resolve, reject) => {
+    console.log('🔄 Converting WAV to MP3...')
+    
+    const ffmpeg = spawn('ffmpeg', [
+      '-i', wavPath,           // Input file
+      '-codec:a', 'libmp3lame', // MP3 encoder
+      '-b:a', '128k',           // Constant bitrate 320 kbps
+      '-y',                     // Overwrite if exists
+      mp3Path                   // Output file
+    ])
+    
+    ffmpeg.stderr.on('data', () => {
+      // Suppress ffmpeg output
+    })
+    
+    ffmpeg.on('close', (code) => {
+      if (code === 0) {
+        resolve()
+      } else {
+        reject(new Error(`ffmpeg conversion failed with code ${code}`))
+      }
+    })
+    
+    ffmpeg.on('error', (err) => {
+      reject(err)
+    })
+  })
+}
+
+/**
  * Scans the episodes directory for episodes ready to upload
  */
 async function scanEpisodesDirectory(options = {}) {
@@ -248,15 +299,23 @@ async function scanEpisodesDirectory(options = {}) {
 
       // Check for audio file in FINAL folder
       const finalFiles = await fs.readdir(finalPath)
-      const audioFile = finalFiles.find(file => 
-        file.endsWith('.wav') || 
+      let audioFile = finalFiles.find(file => 
         file.endsWith('.mp3') || 
         file.endsWith('.m4a')
       )
 
+      // If no MP3/M4A found, check for WAV and mark for conversion
+      let needsConversion = false
       if (!audioFile) {
-        console.log(`⚠️  No audio file found in ${entry.name}/FINAL`)
-        continue
+        const wavFile = finalFiles.find(file => file.endsWith('.wav'))
+        if (wavFile) {
+          audioFile = wavFile
+          needsConversion = true
+        } else {
+          console.log(`⚠️  No audio file found in ${entry.name}/FINAL`)
+          console.log(`   Supported formats: MP3, M4A, WAV (will auto-convert)`)
+          continue
+        }
       }
 
       // Extract date from folder name
@@ -284,6 +343,7 @@ async function scanEpisodesDirectory(options = {}) {
         audioFilePath: audioFilePath,
         fileSize: stats.size,
         fileSizeMB: (stats.size / (1024 * 1024)).toFixed(2),
+        needsConversion: needsConversion,
       })
     }
 
@@ -370,20 +430,35 @@ async function uploadAudioFile(filePath, uploadUrl) {
 }
 
 /**
- * Publishes episode on Podbean
+ * Publishes or schedules episode on Podbean
  */
 async function publishEpisode(title, fileKey, date) {
   try {
-    console.log('📝 Publishing episode on Podbean...')
-    
     // Convert date to timestamp (publish at 6:00 AM local time)
     const publishDate = new Date(date + 'T06:00:00')
     const publishTimestamp = Math.floor(publishDate.getTime() / 1000)
+    const now = Math.floor(Date.now() / 1000)
+    
+    // Determine if this is a future episode
+    const isFuture = publishTimestamp > now
+    
+    if (isFuture) {
+      console.log('📅 Scheduling future episode on Podbean...')
+      console.log(`   Scheduled for: ${publishDate.toLocaleString()} (${date} 06:00 AM)`)
+    } else {
+      console.log('📝 Publishing episode on Podbean...')
+      console.log(`   Publish date: ${publishDate.toLocaleString()} (${date} 06:00 AM)`)
+    }
+    
+    // For Podbean API:
+    // - status: 'draft' with publish_time creates a scheduled episode
+    // - status: 'publish' publishes immediately (ignores publish_time)
+    const status = isFuture ? 'draft' : 'publish'
     
     const formData = new URLSearchParams({
       title: title,
       content: '', // Add description if needed
-      status: 'publish',
+      status: status,
       type: 'public',
       media_key: fileKey,
       publish_time: publishTimestamp.toString(),
@@ -397,8 +472,15 @@ async function publishEpisode(title, fileKey, date) {
       body: formData,
     })
 
-    console.log('✅ Episode published successfully')
-    console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+    if (isFuture) {
+      console.log('✅ Episode scheduled successfully')
+      console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+      console.log(`   Will auto-publish on: ${publishDate.toLocaleString()}`)
+    } else {
+      console.log('✅ Episode published successfully')
+      console.log(`   Episode ID: ${data.episode?.id || 'unknown'}`)
+      console.log(`   Published on: ${publishDate.toLocaleString()}`)
+    }
     
     return {
       episodeId: data.episode?.id,
@@ -437,6 +519,17 @@ function isEpisodeUploaded(existingEpisodes, title, date) {
 }
 
 /**
+ * Finds existing episode on Podbean by title and date
+ */
+function findExistingEpisode(existingEpisodes, title, date) {
+  return existingEpisodes.find(episode => {
+    const episodeDate = new Date(episode.publish_time * 1000)
+    const episodeDateStr = episodeDate.toISOString().split('T')[0]
+    return episode.title === title || episodeDateStr === date
+  })
+}
+
+/**
  * Uploads a single episode to Podbean
  */
 async function uploadEpisode(episode, options = {}) {
@@ -454,16 +547,81 @@ async function uploadEpisode(episode, options = {}) {
     
     console.log(`📝 Title: ${notionEpisode.title}`)
     
+    // Check if episode already exists on Podbean
+    if (options.existingEpisodes) {
+      const existingEpisode = findExistingEpisode(
+        options.existingEpisodes,
+        notionEpisode.title,
+        episode.date
+      )
+      
+      if (existingEpisode) {
+        const existingDate = new Date(existingEpisode.publish_time * 1000)
+        const existingDateStr = existingDate.toISOString().split('T')[0]
+        
+        console.log(`⚠️  Episode already exists on Podbean:`)
+        console.log(`   Title: ${existingEpisode.title}`)
+        console.log(`   Published: ${existingDateStr}`)
+        console.log(`   URL: ${existingEpisode.permalink || 'N/A'}`)
+        
+        if (options.force) {
+          console.log('⚡ --force flag detected - uploading anyway (will create duplicate)')
+        } else {
+          console.log('⏭️  Skipping (use --force to upload anyway)')
+          return { success: true, skipped: true, reason: 'already_exists' }
+        }
+      }
+    }
+    
     if (options.dryRun) {
-      console.log('🏃 DRY RUN - Would upload this episode')
+      if (episode.needsConversion) {
+        console.log('🏃 DRY RUN - Would convert WAV to MP3 and upload')
+      } else {
+        console.log('🏃 DRY RUN - Would upload this episode')
+      }
       return { success: true, dryRun: true }
     }
     
+    // Handle WAV conversion if needed
+    let uploadFilePath = episode.audioFilePath
+    let uploadFileName = episode.audioFile
+    let uploadFileSize = episode.fileSize
+    
+    if (episode.needsConversion) {
+      console.log('⚠️  WAV format detected - converting to MP3...')
+      
+      // Generate MP3 path
+      const mp3FileName = episode.audioFile.replace(/\.wav$/i, '.mp3')
+      const mp3FilePath = path.join(path.dirname(episode.audioFilePath), mp3FileName)
+      
+      // Check if MP3 already exists
+      try {
+        await fs.access(mp3FilePath)
+        console.log('✅ MP3 file already exists - using existing file')
+      } catch {
+        // Need to convert
+        try {
+          await convertWAVtoMP3(episode.audioFilePath, mp3FilePath)
+          console.log('✅ Conversion complete')
+        } catch (conversionError) {
+          throw new Error(`Failed to convert WAV to MP3: ${conversionError.message}`)
+        }
+      }
+      
+      // Update file info for upload
+      const mp3Stats = await fs.stat(mp3FilePath)
+      uploadFilePath = mp3FilePath
+      uploadFileName = mp3FileName
+      uploadFileSize = mp3Stats.size
+      
+      console.log(`📄 Using MP3: ${mp3FileName} (${(uploadFileSize / (1024 * 1024)).toFixed(2)} MB)`)
+    }
+    
     // Get upload authorization
-    const { uploadUrl, fileKey } = await getUploadAuthUrl(episode.audioFile, episode.fileSize)
+    const { uploadUrl, fileKey } = await getUploadAuthUrl(uploadFileName, uploadFileSize)
     
     // Upload audio file
-    await uploadAudioFile(episode.audioFilePath, uploadUrl)
+    await uploadAudioFile(uploadFilePath, uploadUrl)
     
     // Publish episode
     const result = await publishEpisode(notionEpisode.title, fileKey, episode.date)
@@ -494,13 +652,21 @@ async function main() {
       dryRun: args.includes('--dry-run'),
       startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
       endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
-      skipUploaded: args.includes('--skip-uploaded'),
+      force: args.includes('--force'),
     }
     
     console.log('🚀 Podbean Episode Uploader\n')
     
     if (options.dryRun) {
       console.log('🏃 DRY RUN MODE - No episodes will be uploaded\n')
+    }
+    
+    // Check for ffmpeg if WAV files might need conversion
+    const hasFFmpeg = await checkFFmpeg()
+    if (!hasFFmpeg) {
+      console.log('⚠️  Warning: ffmpeg not found - WAV files cannot be auto-converted')
+      console.log('   Install ffmpeg: brew install ffmpeg (macOS) or apt-get install ffmpeg (Linux)')
+      console.log('   Continuing with MP3/M4A files only...\n')
     }
     
     // Scan episodes directory
@@ -511,13 +677,13 @@ async function main() {
       return
     }
     
-    // Get existing episodes from Podbean
-    let existingEpisodes = []
-    if (options.skipUploaded) {
-      console.log('\n🔍 Checking for already uploaded episodes...')
-      existingEpisodes = await getExistingEpisodes()
-      console.log(`📊 Found ${existingEpisodes.length} existing episodes on Podbean`)
-    }
+    // Get existing episodes from Podbean (always check to prevent duplicates)
+    console.log('\n🔍 Checking for existing episodes on Podbean...')
+    const existingEpisodes = await getExistingEpisodes()
+    console.log(`📊 Found ${existingEpisodes.length} existing episodes on Podbean\n`)
+    
+    // Pass existing episodes to upload options
+    options.existingEpisodes = existingEpisodes
     
     // Upload episodes
     let successCount = 0
@@ -527,20 +693,14 @@ async function main() {
     for (let i = 0; i < episodes.length; i++) {
       const episode = episodes[i]
       
-      // Check if already uploaded
-      if (options.skipUploaded) {
-        const notionEpisode = await getEpisodeFromNotion(episode.date)
-        if (notionEpisode && isEpisodeUploaded(existingEpisodes, notionEpisode.title, episode.date)) {
-          console.log(`\n⏭️  Skipping ${episode.date} - already uploaded`)
-          skipCount++
-          continue
-        }
-      }
-      
       const result = await uploadEpisode(episode, options)
       
       if (result.success) {
-        successCount++
+        if (result.skipped) {
+          skipCount++
+        } else {
+          successCount++
+        }
       } else {
         failCount++
       }

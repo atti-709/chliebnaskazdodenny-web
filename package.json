@@ -17,13 +17,17 @@
     "upload": "node scripts/upload-to-notion.mjs devotionals-2026.json",
     "upload:force": "node scripts/upload-to-notion.mjs devotionals-2026-dec.json --force",
     "discover-schema": "node scripts/discover-schema.mjs",
-    "podbean:dry-run": "node scripts/upload-to-podbean.mjs --dry-run",
-    "podbean:upload": "node scripts/upload-to-podbean.mjs",
-    "podbean:upload-skip": "node scripts/upload-to-podbean.mjs --skip-uploaded"
+    "convert:wav": "node scripts/convert-wav-to-mp3.mjs --all",
+    "convert:wav-dry": "node scripts/convert-wav-to-mp3.mjs --all --dry-run",
+    "rss:dry-run": "node scripts/upload-to-rss.mjs --dry-run",
+    "rss:upload": "node scripts/upload-to-rss.mjs",
+    "rss:force": "node scripts/upload-to-rss.mjs --force",
+    "spotify:sync": "node -e \"require('node-fetch').then(f => f.default('http://localhost:5173/api/sync-spotify-embeds').then(r => r.json()).then(console.log))\""
   },
   "dependencies": {
     "date-fns": "^2.30.0",
     "dotenv": "^17.2.3",
+    "formdata-node": "^6.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -8,5 +8,11 @@
       "source": "/api/:path*",
       "destination": "/api/:path*"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/sync-spotify-embeds",
+      "schedule": "0 6 * * *"
+    }
   ]
 }
