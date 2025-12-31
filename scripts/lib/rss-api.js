@@ -292,10 +292,8 @@ export async function createEpisodeWithAsset(audioId, title, date, options = {})
       console.log(`   Publishing on: ${publishDate.toLocaleString()}`)
     }
 
-    // Create episode description
-    const description = `Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň. 
-📖 Toto zamyslenie nájdeš ja na našom webe www.chliebnaskazdodenny.sk
-#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie`
+    // Create episode description with newlines
+    const description = `<p>Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň.</p><p>📖 Toto zamyslenie nájdeš aj na našom webe <a href="https://www.chliebnaskazdodenny.sk">chliebnaskazdodenny.sk</a></p><p></p><p>#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie</p>`
 
     const episodeData = {
       title: title,
