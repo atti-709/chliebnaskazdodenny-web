@@ -4,7 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from './icons'
 
 function DateNavigation({
   currentDate,
-  isToday,
+  isToday: _isToday,
   onPreviousDay,
   onNextDay,
   onToggleDatePicker,
@@ -29,7 +29,7 @@ function DateNavigation({
         data-datepicker-toggle
         className="px-6 py-2 rounded-full bg-accent/10 hover:bg-accent/20 smooth-transition relative"
       >
-        <span className="text-sm md:text-base font-medium text-gray-700 capitalize">
+        <span className="text-sm md:text-base font-medium text-gray-700">
           {format(currentDate, 'd. MMMM yyyy', { locale: sk })}
         </span>
       </button>

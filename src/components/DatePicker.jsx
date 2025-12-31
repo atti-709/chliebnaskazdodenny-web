@@ -77,8 +77,8 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
           <ChevronLeftIcon />
         </button>
 
-        <h3 className="text-sm font-medium text-gray-800 capitalize">
-          {format(viewMonth, 'MMMM yyyy', { locale: sk })}
+        <h3 className="text-sm font-medium text-gray-800">
+          {format(viewMonth, 'LLLL yyyy', { locale: sk })}
         </h3>
 
         <button
