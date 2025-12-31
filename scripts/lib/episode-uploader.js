@@ -178,16 +178,16 @@ export async function uploadEpisode(episode, options = {}) {
     // Upload and create episode on RSS.com (combined operation)
     const result = await uploadAndCreateEpisode(uploadFilePath, notionEpisode.title, episode.date, itunesOptions)
     
-    // Update Notion with embed URL only if episode is published
-    // (scheduled episodes show "not available" error in the player)
+    // Update Notion with embed URL immediately (frontend will handle display logic)
     if (result.playerUrl) {
-      const isPublished = result.rawResponse?.status === 'published'
+      await updateNotionEmbedUri(notionEpisode.pageId, result.playerUrl)
       
-      if (isPublished) {
-        await updateNotionEmbedUri(notionEpisode.pageId, result.playerUrl)
+      const status = result.rawResponse?.status || 'unknown'
+      if (status === 'published') {
+        console.log('📻 Episode published - player URL saved to Notion')
       } else {
-        console.log(`⏰ Episode is scheduled (status: ${result.rawResponse?.status || 'unknown'})`)
-        console.log('   Player URL will be synced after episode is published')
+        console.log(`⏰ Episode scheduled (status: ${status}) - player URL saved to Notion`)
+        console.log('   Frontend will show player when episode is published')
       }
     } else {
       console.log('⚠️  No player URL available from RSS.com API')

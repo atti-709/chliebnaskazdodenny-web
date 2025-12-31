@@ -6,9 +6,25 @@
  * - Podbean embed URLs
  * - Spotify embed URLs
  * - Any other podcast platform with iframe embed support
+ *
+ * @param {string} embedUri - The embed URL for the player
+ * @param {string} episodeDate - Episode date (YYYY-MM-DD) - player only shows if date is today or in the past
  */
-function PodcastPlayer({ embedUri }) {
+function PodcastPlayer({ embedUri, episodeDate }) {
   if (!embedUri) return null
+
+  // Only show player if episode is published (6 AM UTC+1 on episode date or later)
+  if (episodeDate) {
+    const now = new Date()
+
+    // Create publish time: 6 AM UTC+1 on episode date
+    const publishTime = new Date(episodeDate + 'T06:00:00+01:00')
+
+    // If current time is before the publish time, don't show player
+    if (now < publishTime) {
+      return null
+    }
+  }
 
   // Check if it's an RSS.com player URL and customize it
   let finalEmbedUri = embedUri

@@ -22,6 +22,10 @@
     "rss:dry-run": "node scripts/upload-to-rss.mjs --dry-run",
     "rss:upload": "node scripts/upload-to-rss.mjs",
     "rss:force": "node scripts/upload-to-rss.mjs --force",
+    "rss:update": "node scripts/update-rss-episodes.mjs",
+    "rss:update-dry": "node scripts/update-rss-episodes.mjs --dry-run",
+    "rss:update-description": "node scripts/update-rss-episodes.mjs --description-only",
+    "rss:update-audio": "node scripts/update-rss-episodes.mjs --audio-only",
     "spotify:sync": "node -e \"require('node-fetch').then(f => f.default('http://localhost:5173/api/sync-spotify-embeds').then(r => r.json()).then(console.log))\""
   },
   "dependencies": {

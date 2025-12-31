@@ -78,7 +78,7 @@ function DevotionalContent({ devotional }) {
       )}
 
       {/* Podcast Player (supports Podbean, Spotify, etc.) */}
-      <PodcastPlayer embedUri={devotional.spotifyEmbedUri} />
+      <PodcastPlayer embedUri={devotional.spotifyEmbedUri} episodeDate={devotional.date} />
 
       {/* Devotional Text */}
       <div

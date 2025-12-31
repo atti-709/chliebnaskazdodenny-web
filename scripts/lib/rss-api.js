@@ -8,6 +8,11 @@
 import { rssConfig } from './config.js'
 
 /**
+ * Default episode description used for all episodes
+ */
+export const DEFAULT_EPISODE_DESCRIPTION = `<p>Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň.</p><p>📖 Toto zamyslenie nájdeš aj na našom webe <a href="https://www.chliebnaskazdodenny.sk">chliebnaskazdodenny.sk</a></p><p></p><p>#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie</p>`
+
+/**
  * Makes a request to RSS.com API
  * @param {string} endpoint - API endpoint (e.g., '/podcasts/123')
  * @param {Object} options - Request options
@@ -280,8 +285,8 @@ export async function createEpisodeWithAsset(audioId, title, date, options = {})
   try {
     console.log('📝 Step 3: Creating episode with audio asset...')
 
-    // Convert date to ISO format for RSS.com
-    const publishDate = new Date(date + 'T06:00:00')
+    // Convert date to ISO format for RSS.com (6 AM UTC+1)
+    const publishDate = new Date(date + 'T06:00:00+01:00')
     const publishISO = publishDate.toISOString()
     const now = new Date()
     const isFuture = publishDate > now
@@ -292,8 +297,8 @@ export async function createEpisodeWithAsset(audioId, title, date, options = {})
       console.log(`   Publishing on: ${publishDate.toLocaleString()}`)
     }
 
-    // Create episode description with newlines
-    const description = `<p>Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň.</p><p>📖 Toto zamyslenie nájdeš aj na našom webe <a href="https://www.chliebnaskazdodenny.sk">chliebnaskazdodenny.sk</a></p><p></p><p>#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie</p>`
+    // Use default episode description
+    const description = DEFAULT_EPISODE_DESCRIPTION
 
     const episodeData = {
       title: title,
@@ -379,6 +384,83 @@ export async function createEpisodeWithAsset(audioId, title, date, options = {})
     }
   } catch (error) {
     console.error('❌ Error creating episode:', error.message)
+    throw error
+  }
+}
+
+/**
+ * Updates an existing episode on RSS.com
+ * @param {number|string} episodeId - Episode ID to update
+ * @param {Object} updates - Fields to update
+ * @param {string} [updates.title] - New episode title
+ * @param {string} [updates.description] - New episode description
+ * @param {string} [updates.audioId] - New audio asset ID
+ * @param {string} [updates.scheduleDateTime] - New schedule datetime (ISO format)
+ * @param {number[]} [updates.keywordIds] - New keyword IDs
+ * @returns {Promise<Object>} Updated episode data
+ */
+export async function updateEpisode(episodeId, updates = {}) {
+  try {
+    console.log(`📝 Updating episode (ID: ${episodeId})...`)
+
+    const updateData = {}
+
+    if (updates.title) {
+      updateData.title = updates.title
+      console.log(`   Updating title: "${updates.title}"`)
+    }
+
+    if (updates.description) {
+      updateData.description = updates.description
+      console.log(`   Updating description`)
+    }
+
+    if (updates.audioId) {
+      updateData.audio_upload_id = updates.audioId
+      console.log(`   Updating audio (asset ID: ${updates.audioId})`)
+    }
+
+    if (updates.scheduleDateTime) {
+      updateData.schedule_datetime = updates.scheduleDateTime
+      console.log(`   Updating schedule: ${updates.scheduleDateTime}`)
+    }
+
+    if (updates.keywordIds && updates.keywordIds.length > 0) {
+      updateData.keyword_ids = updates.keywordIds
+      console.log(`   Updating keywords (${updates.keywordIds.length} keywords)`)
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      console.log('⚠️  No updates provided')
+      return { updated: false }
+    }
+
+    const response = await fetch(`${rssConfig.apiBase}/podcasts/${rssConfig.podcastId}/episodes/${episodeId}`, {
+      method: 'PATCH',
+      headers: {
+        'X-Api-Key': rssConfig.apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`   Response status: ${response.status}`)
+      console.error(`   Response error: ${errorText}`)
+      throw new Error(`Episode update failed (${response.status}): ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('✅ Episode updated successfully')
+
+    return {
+      updated: true,
+      episodeId: data.id,
+      rawResponse: data
+    }
+  } catch (error) {
+    console.error('❌ Error updating episode:', error.message)
     throw error
   }
 }
