@@ -131,22 +131,50 @@ export async function testCredentials() {
 
 /**
  * Gets list of existing episodes from RSS.com
- * @param {number} limit - Maximum number of episodes to fetch (max 100 per request)
+ * @param {number} limit - Maximum number of episodes to fetch (default: fetch all)
  * @returns {Promise<Array>} Array of existing episodes
  */
-export async function getExistingEpisodes(limit = 100) {
+export async function getExistingEpisodes(limit = 1000) {
   try {
-    // RSS.com API has a maximum limit of 100 per request
-    const actualLimit = Math.min(limit, 100)
-    const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${actualLimit}`)
+    const allEpisodes = []
+    // const statuses = ['draft', 'scheduled', 'published']
+    const statuses = ['draft', 'scheduled', 'published']
     
-    // RSS.com v4 API returns episodes as root array, not wrapped in object
-    if (Array.isArray(data)) {
-      return data
+    // Fetch episodes for each status
+    for (const status of statuses) {
+      let offset = 0
+      const pageSize = 100 // RSS.com API max per request
+      
+      while (allEpisodes.length < limit) {
+        const fetchLimit = Math.min(pageSize, limit - allEpisodes.length)
+        const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${fetchLimit}&offset=${offset}&status=${status}`)
+        
+        // RSS.com v4 API returns episodes as root array, not wrapped in object
+        let episodes = []
+        if (Array.isArray(data)) {
+          episodes = data
+        } else {
+          // Fallback: check for common wrapper keys
+          episodes = data.items || data.data || data.episodes || []
+        }
+        
+        if (episodes.length === 0) {
+          // No more episodes to fetch for this status
+          break
+        }
+        
+        allEpisodes.push(...episodes)
+        
+        // If we got fewer episodes than requested, we've reached the end for this status
+        if (episodes.length < fetchLimit) {
+          break
+        }
+        
+        offset += episodes.length
+      }
     }
     
-    // Fallback: check for common wrapper keys
-    return data.items || data.data || data.episodes || []
+    return allEpisodes
   } catch (error) {
     console.error('⚠️  Could not fetch existing episodes:', error.message)
     console.error('   Continuing without duplicate detection...')
@@ -159,9 +187,10 @@ export async function getExistingEpisodes(limit = 100) {
  * @param {Array} existingEpisodes - Array of existing episodes
  * @param {string} title - Episode title to search for
  * @param {string} date - Episode date (YYYY-MM-DD)
+ * @param {boolean} debug - Enable debug logging
  * @returns {Object|undefined} Found episode or undefined
  */
-export function findExistingEpisode(existingEpisodes, title, date) {
+export function findExistingEpisode(existingEpisodes, title, date, debug = false) {
   return existingEpisodes.find(episode => {
     // RSS.com v4 API uses publish_datetime for published episodes
     // and schedule_datetime for scheduled episodes
@@ -170,8 +199,31 @@ export function findExistingEpisode(existingEpisodes, title, date) {
                        episode.publishedAt || 
                        episode.published_at || 
                        episode.date
-    const episodeDateStr = episodeDate ? new Date(episodeDate).toISOString().split('T')[0] : null
-    return episode.title === title || episodeDateStr === date
+    
+    if (!episodeDate) {
+      if (debug) console.log(`   No date found for episode: ${episode.title}`)
+      return false
+    }
+    
+    // Parse the date and extract YYYY-MM-DD in UTC
+    // RSS.com returns ISO 8601 format like "2026-01-01T05:00:00.000Z"
+    const episodeDateStr = episodeDate.substring(0, 10) // Extract YYYY-MM-DD directly
+    
+    if (debug) {
+      const status = episode.status || 'unknown'
+      console.log(`   Comparing: "${episodeDateStr}" with "${date}" [${status}] (title: "${episode.title}")`)
+    }
+    
+    // Match by date first (more reliable), then by title
+    if (episodeDateStr === date) {
+      return true
+    }
+    
+    if (title && episode.title === title) {
+      return true
+    }
+    
+    return false
   })
 }
 

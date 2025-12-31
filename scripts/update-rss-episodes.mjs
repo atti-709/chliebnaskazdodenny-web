@@ -232,24 +232,41 @@ async function main() {
     // Get existing episodes from RSS.com
     console.log('\n🔍 Fetching existing episodes from RSS.com...')
     const rssEpisodes = await getExistingEpisodes()
-    console.log(`📊 Found ${rssEpisodes.length} episodes on RSS.com\n`)
+    console.log(`📊 Found ${rssEpisodes.length} episodes on RSS.com`)
+    
+    // Show sample of dates for debugging
+    if (rssEpisodes.length > 0) {
+      console.log('\n📅 Sample of episode dates on RSS.com (first 10):')
+      rssEpisodes.slice(0, 10).forEach(ep => {
+        const dateField = ep.publish_datetime || ep.schedule_datetime || 'no date'
+        const extractedDate = dateField !== 'no date' ? dateField.substring(0, 10) : 'N/A'
+        const status = ep.status || 'unknown'
+        console.log(`   ${extractedDate}: "${ep.title}" [${status}] (ID: ${ep.id})`)
+      })
+      console.log('')
+    }
     
     // Match local episodes with RSS.com episodes
     const matchedEpisodes = []
     const unmatchedEpisodes = []
     
+    console.log('🔍 Matching local episodes with RSS.com episodes...')
     for (const localEpisode of localEpisodes) {
-      const rssEpisode = findExistingEpisode(rssEpisodes, null, localEpisode.date)
+      console.log(`\n📅 Looking for episode: ${localEpisode.date}`)
+      const rssEpisode = findExistingEpisode(rssEpisodes, null, localEpisode.date, true)
       
       if (rssEpisode) {
+        console.log(`   ✅ Found: "${rssEpisode.title}" (ID: ${rssEpisode.id})`)
         matchedEpisodes.push({
           local: localEpisode,
           rss: rssEpisode,
         })
       } else {
+        console.log(`   ❌ Not found on RSS.com`)
         unmatchedEpisodes.push(localEpisode)
       }
     }
+    console.log('')
     
     console.log(`✅ Matched ${matchedEpisodes.length} episodes`)
     if (unmatchedEpisodes.length > 0) {
