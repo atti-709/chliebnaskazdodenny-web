@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 function Footer() {
   // TODO: Update these URLs with your actual podcast links
   const podcastLinks = {
-    spotify: 'https://open.spotify.com/show/YOUR_SHOW_ID',
-    apple: 'https://podcasts.apple.com/podcast/YOUR_PODCAST_ID',
-    pocketcasts: 'https://pca.st/YOUR_PODCAST_ID',
+    spotify: 'https://open.spotify.com/show/5MTEMypdAqch4jM79yFbBT?si=b67a5dda1b02462a',
+    apple:
+      'https://podcasts.apple.com/us/podcast/chlieb-n%C3%A1%C5%A1-ka%C5%BEdodenn%C3%BD/id1865524479',
+    pocketcasts:
+      'https://pocketcasts.com/podcast/chlieb-n%C3%A1%C5%A1-ka%C5%BEdodenn%C3%BD/953acad0-c8d0-013e-e0ba-0e1ab590d6db',
   }
 
   return (
