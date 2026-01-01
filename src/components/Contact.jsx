@@ -37,7 +37,7 @@ function Contact() {
               <p className="font-medium">IN Network Slovakia, n.o.</p>
               <p>Sokolská 12, 984 01 Lučenec</p>
               <p>
-                <span className="font-medium">Tel.:</span>{' '}
+                <span className="font-medium">Tel. / WhatsApp:</span>{' '}
                 <a
                   href="tel:+421907169875"
                   className="text-accent hover:text-accent-dark smooth-transition"
