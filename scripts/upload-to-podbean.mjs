@@ -434,8 +434,8 @@ async function uploadAudioFile(filePath, uploadUrl) {
  */
 async function publishEpisode(title, fileKey, date) {
   try {
-    // Convert date to timestamp (publish at 6:00 AM local time)
-    const publishDate = new Date(date + 'T06:00:00')
+    // Convert date to timestamp (publish at 4:00 AM local time)
+    const publishDate = new Date(date + 'T04:00:00')
     const publishTimestamp = Math.floor(publishDate.getTime() / 1000)
     const now = Math.floor(Date.now() / 1000)
     
@@ -444,10 +444,10 @@ async function publishEpisode(title, fileKey, date) {
     
     if (isFuture) {
       console.log('📅 Scheduling future episode on Podbean...')
-      console.log(`   Scheduled for: ${publishDate.toLocaleString()} (${date} 06:00 AM)`)
+      console.log(`   Scheduled for: ${publishDate.toLocaleString()} (${date} 04:00 AM)`)
     } else {
       console.log('📝 Publishing episode on Podbean...')
-      console.log(`   Publish date: ${publishDate.toLocaleString()} (${date} 06:00 AM)`)
+      console.log(`   Publish date: ${publishDate.toLocaleString()} (${date} 04:00 AM)`)
     }
     
     // For Podbean API:

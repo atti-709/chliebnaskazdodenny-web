@@ -13,12 +13,12 @@
 function PodcastPlayer({ embedUri, episodeDate }) {
   if (!embedUri) return null
 
-  // Only show player if episode is published (6 AM UTC+1 on episode date or later)
+  // Only show player if episode is published (4 AM UTC+1 on episode date or later)
   if (episodeDate) {
     const now = new Date()
 
-    // Create publish time: 6 AM UTC+1 on episode date
-    const publishTime = new Date(episodeDate + 'T06:00:00+01:00')
+    // Create publish time: 4 AM UTC+1 on episode date
+    const publishTime = new Date(episodeDate + 'T04:00:00+01:00')
 
     // If current time is before the publish time, don't show player
     if (now < publishTime) {

@@ -7,6 +7,9 @@
  * and/or audio files. It scans the local directory for episodes, matches them
  * with existing episodes on RSS.com, and updates them.
  * 
+ * Note: Only unpublished episodes (draft/scheduled) will be updated.
+ * Published episodes will be automatically skipped.
+ * 
  * Usage:
  *   node scripts/update-rss-episodes.mjs [options]
  * 
@@ -16,6 +19,7 @@
  *   --end-date         End date (YYYY-MM-DD) for episodes to update
  *   --description-only Update only the description (no audio upload)
  *   --audio-only       Update only the audio file (no description change)
+ *   --update-schedule  Update the schedule_datetime to 4 AM UTC+1
  * 
  * Environment Variables (add to .env.local):
  *   RSS_API_KEY             - RSS.com API key
@@ -44,6 +48,7 @@ function parseArgs() {
     endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
     descriptionOnly: args.includes('--description-only'),
     audioOnly: args.includes('--audio-only'),
+    updateSchedule: args.includes('--update-schedule'),
   }
 }
 
@@ -101,6 +106,13 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
     console.log(`📄 Local File: ${localEpisode.audioFile} (${localEpisode.fileSizeMB} MB)`)
     console.log(`🆔 RSS.com Episode ID: ${rssEpisode.id}`)
     console.log(`📝 Current Title: ${rssEpisode.title}`)
+    console.log(`📊 Status: ${rssEpisode.status || 'unknown'}`)
+    
+    // Skip published episodes for all updates
+    if (rssEpisode.status === 'published') {
+      console.log('⏭️  Skipping published episode - only unpublished episodes can be updated')
+      return { success: true, skipped: true, reason: 'published' }
+    }
     
     if (options.dryRun) {
       console.log('🏃 DRY RUN MODE - Would update:')
@@ -110,6 +122,9 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
       if (!options.descriptionOnly) {
         console.log(`   - Audio file (${localEpisode.needsConversion ? 'with WAV to MP3 conversion' : 'direct upload'})`)
       }
+      if (options.updateSchedule) {
+        console.log('   - Schedule time (to 4 AM UTC+1)')
+      }
       return { success: true, dryRun: true }
     }
 
@@ -118,6 +133,15 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
     // Update description (unless audio-only mode)
     if (!options.audioOnly) {
       updates.description = DEFAULT_EPISODE_DESCRIPTION
+    }
+
+    // Update schedule_datetime if requested
+    if (options.updateSchedule) {
+      // Convert date to ISO format for RSS.com (4 AM UTC+1)
+      const publishDate = new Date(localEpisode.date + 'T04:00:00+01:00')
+      const publishISO = publishDate.toISOString()
+      updates.scheduleDateTime = publishISO
+      console.log(`⏰ New schedule time: ${publishDate.toLocaleString()} (4 AM UTC+1)`)
     }
 
     // Update audio file (unless description-only mode)
@@ -162,12 +186,15 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
 /**
  * Prints update summary
  */
-function printSummary(successCount, skipCount, failCount, totalCount) {
+function printSummary(successCount, skipCount, failCount, totalCount, skipReasons = {}) {
   console.log(`\n${'='.repeat(60)}`)
   console.log('📊 Update Summary:')
   console.log(`✅ Success: ${successCount}`)
   if (skipCount > 0) {
     console.log(`⏭️  Skipped: ${skipCount}`)
+    if (skipReasons.published > 0) {
+      console.log(`   - Already published: ${skipReasons.published}`)
+    }
   }
   console.log(`❌ Failed: ${failCount}`)
   console.log(`📝 Total: ${totalCount}`)
@@ -197,6 +224,10 @@ async function main() {
     
     if (options.audioOnly) {
       console.log('🎵 AUDIO ONLY MODE - Only audio files will be updated\n')
+    }
+    
+    if (options.updateSchedule) {
+      console.log('⏰ SCHEDULE UPDATE MODE - Schedule times will be updated to 4 AM UTC+1\n')
     }
     
     if (options.descriptionOnly && options.audioOnly) {
@@ -285,6 +316,7 @@ async function main() {
     let successCount = 0
     let skipCount = 0
     let failCount = 0
+    const skipReasons = { published: 0 }
     
     for (let i = 0; i < matchedEpisodes.length; i++) {
       const { local, rss } = matchedEpisodes[i]
@@ -294,6 +326,9 @@ async function main() {
       if (result.success) {
         if (result.skipped) {
           skipCount++
+          if (result.reason === 'published') {
+            skipReasons.published++
+          }
         } else {
           successCount++
         }
@@ -309,7 +344,7 @@ async function main() {
     }
     
     // Print summary
-    printSummary(successCount, skipCount, failCount, matchedEpisodes.length)
+    printSummary(successCount, skipCount, failCount, matchedEpisodes.length, skipReasons)
     
   } catch (error) {
     console.error('\n💥 Update failed:', error.message)
