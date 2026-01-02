@@ -14,7 +14,7 @@
  *   --dry-run          Show what would be uploaded without actually uploading
  *   --start-date       Start date (YYYY-MM-DD) for episodes to upload
  *   --end-date         End date (YYYY-MM-DD) for episodes to upload
- *   --force            Upload even if episode already exists (creates duplicate)
+ *   --force            Upload even if episode already exists (deletes and re-uploads)
  * 
  * Environment Variables (add to .env.local):
  *   RSS_API_KEY             - RSS.com API key
