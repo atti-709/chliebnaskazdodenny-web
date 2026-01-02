@@ -4,7 +4,7 @@ function Footer() {
   // Social media links
   const socialLinks = {
     instagram: 'https://www.instagram.com/chlieb.nas.kazdodenny',
-    facebook: 'https://www.facebook.com/chlieb.nas.kazdodenny/',
+    facebook: 'https://www.facebook.com/chlieb.nas.kazdodenny',
   }
 
   // Podcast platform links
