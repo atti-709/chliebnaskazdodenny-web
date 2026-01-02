@@ -28,6 +28,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { spawn } from 'child_process'
 import dotenv from 'dotenv'
+import { createPragueTime4AM } from './lib/timezone-utils.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -434,8 +435,8 @@ async function uploadAudioFile(filePath, uploadUrl) {
  */
 async function publishEpisode(title, fileKey, date) {
   try {
-    // Convert date to timestamp (publish at 4:00 AM local time)
-    const publishDate = new Date(date + 'T04:00:00')
+    // Convert date to timestamp (publish at 4:00 AM Prague time, DST-aware)
+    const publishDate = createPragueTime4AM(date)
     const publishTimestamp = Math.floor(publishDate.getTime() / 1000)
     const now = Math.floor(Date.now() / 1000)
     
@@ -444,10 +445,10 @@ async function publishEpisode(title, fileKey, date) {
     
     if (isFuture) {
       console.log('📅 Scheduling future episode on Podbean...')
-      console.log(`   Scheduled for: ${publishDate.toLocaleString()} (${date} 04:00 AM)`)
+      console.log(`   Scheduled for: ${publishDate.toLocaleString()} (${date} 04:00 AM Prague time)`)
     } else {
       console.log('📝 Publishing episode on Podbean...')
-      console.log(`   Publish date: ${publishDate.toLocaleString()} (${date} 04:00 AM)`)
+      console.log(`   Publish date: ${publishDate.toLocaleString()} (${date} 04:00 AM Prague time)`)
     }
     
     // For Podbean API:

@@ -1,3 +1,18 @@
+import { zonedTimeToUtc } from 'date-fns-tz'
+
+/**
+ * Creates a Date object for 4 AM Prague time on a given date
+ * Automatically handles DST using date-fns-tz
+ *
+ * @param {string} dateStr - Date string in YYYY-MM-DD format
+ * @returns {Date} Date object set to 4 AM Prague time (in UTC)
+ */
+function createPragueTime4AM(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const naiveDate = new Date(year, month - 1, day, 4, 0, 0)
+  return zonedTimeToUtc(naiveDate, 'Europe/Prague')
+}
+
 /**
  * PodcastPlayer component
  *
@@ -13,12 +28,12 @@
 function PodcastPlayer({ embedUri, episodeDate }) {
   if (!embedUri) return null
 
-  // Only show player if episode is published (4 AM UTC+1 on episode date or later)
+  // Only show player if episode is published (4 AM Prague time on episode date or later)
   if (episodeDate) {
     const now = new Date()
 
-    // Create publish time: 4 AM UTC+1 on episode date
-    const publishTime = new Date(episodeDate + 'T04:00:00+01:00')
+    // Create publish time: 4 AM Prague time (DST-aware)
+    const publishTime = createPragueTime4AM(episodeDate)
 
     // If current time is before the publish time, don't show player
     if (now < publishTime) {

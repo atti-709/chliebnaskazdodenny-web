@@ -19,7 +19,7 @@
  *   --end-date         End date (YYYY-MM-DD) for episodes to update
  *   --description-only Update only the description (no audio upload)
  *   --audio-only       Update only the audio file (no description change)
- *   --update-schedule  Update the schedule_datetime to 4 AM UTC+1
+ *   --update-schedule  Update the schedule_datetime to 4 AM Prague time
  * 
  * Environment Variables (add to .env.local):
  *   RSS_API_KEY             - RSS.com API key
@@ -34,6 +34,7 @@ import { validateAllConfig } from './lib/config.js'
 import { testCredentials, getExistingEpisodes, findExistingEpisode, updateEpisode, getPresignedUploadUrl, uploadToPresignedUrl, DEFAULT_EPISODE_DESCRIPTION, getDefaultKeywordIds } from './lib/rss-api.js'
 import { checkFFmpeg, convertWAVtoMP3 } from './lib/audio-converter.js'
 import { scanEpisodesDirectory } from './lib/episode-scanner.js'
+import { createPragueTime4AMISO } from './lib/timezone-utils.js'
 
 /**
  * Parses command line arguments
@@ -123,7 +124,7 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
         console.log(`   - Audio file (${localEpisode.needsConversion ? 'with WAV to MP3 conversion' : 'direct upload'})`)
       }
       if (options.updateSchedule) {
-        console.log('   - Schedule time (to 4 AM UTC+1)')
+        console.log('   - Schedule time (to 4 AM Prague time)')
       }
       return { success: true, dryRun: true }
     }
@@ -137,11 +138,11 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
 
     // Update schedule_datetime if requested
     if (options.updateSchedule) {
-      // Convert date to ISO format for RSS.com (4 AM UTC+1)
-      const publishDate = new Date(localEpisode.date + 'T04:00:00+01:00')
-      const publishISO = publishDate.toISOString()
+      // Convert date to ISO format for RSS.com (4 AM Prague time, DST-aware)
+      const publishISO = createPragueTime4AMISO(localEpisode.date)
+      const publishDate = new Date(publishISO)
       updates.scheduleDateTime = publishISO
-      console.log(`⏰ New schedule time: ${publishDate.toLocaleString()} (4 AM UTC+1)`)
+      console.log(`⏰ New schedule time: ${publishDate.toLocaleString()} (4 AM Prague time)`)
     }
 
     // Update audio file (unless description-only mode)
@@ -227,7 +228,7 @@ async function main() {
     }
     
     if (options.updateSchedule) {
-      console.log('⏰ SCHEDULE UPDATE MODE - Schedule times will be updated to 4 AM UTC+1\n')
+      console.log('⏰ SCHEDULE UPDATE MODE - Schedule times will be updated to 4 AM Prague time\n')
     }
     
     if (options.descriptionOnly && options.audioOnly) {

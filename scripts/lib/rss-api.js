@@ -6,6 +6,7 @@
  */
 
 import { rssConfig } from './config.js'
+import { createPragueTime4AMISO } from './timezone-utils.js'
 
 /**
  * Default episode description used for all episodes
@@ -337,9 +338,9 @@ export async function createEpisodeWithAsset(audioId, title, date, options = {})
   try {
     console.log('📝 Step 3: Creating episode with audio asset...')
 
-    // Convert date to ISO format for RSS.com (4 AM UTC+1)
-    const publishDate = new Date(date + 'T04:00:00+01:00')
-    const publishISO = publishDate.toISOString()
+    // Convert date to ISO format for RSS.com (4 AM Prague time, DST-aware)
+    const publishISO = createPragueTime4AMISO(date)
+    const publishDate = new Date(publishISO)
     const now = new Date()
     const isFuture = publishDate > now
     
