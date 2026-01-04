@@ -14,12 +14,13 @@
  *   node scripts/update-rss-episodes.mjs [options]
  * 
  * Options:
- *   --dry-run          Show what would be updated without actually updating
- *   --start-date       Start date (YYYY-MM-DD) for episodes to update
- *   --end-date         End date (YYYY-MM-DD) for episodes to update
- *   --description-only Update only the description (no audio upload)
- *   --audio-only       Update only the audio file (no description change)
- *   --update-schedule  Update the schedule_datetime to 4 AM Prague time
+ *   --dry-run           Show what would be updated without actually updating
+ *   --start-date        Start date (YYYY-MM-DD) for episodes to update
+ *   --end-date          End date (YYYY-MM-DD) for episodes to update
+ *   --description-only  Update only the description (no audio upload)
+ *   --audio-only        Update only the audio file (no description change)
+ *   --update-schedule   Update the schedule_datetime to 4 AM Prague time
+ *   --include-published Allow updating already published episodes (use with caution!)
  * 
  * Environment Variables (add to .env.local):
  *   RSS_API_KEY             - RSS.com API key
@@ -50,6 +51,7 @@ function parseArgs() {
     descriptionOnly: args.includes('--description-only'),
     audioOnly: args.includes('--audio-only'),
     updateSchedule: args.includes('--update-schedule'),
+    includePublished: args.includes('--include-published'),
   }
 }
 
@@ -109,10 +111,15 @@ async function updateSingleEpisode(localEpisode, rssEpisode, options = {}) {
     console.log(`📝 Current Title: ${rssEpisode.title}`)
     console.log(`📊 Status: ${rssEpisode.status || 'unknown'}`)
     
-    // Skip published episodes for all updates
-    if (rssEpisode.status === 'published') {
-      console.log('⏭️  Skipping published episode - only unpublished episodes can be updated')
+    // Skip published episodes unless --include-published flag is set
+    if (rssEpisode.status === 'published' && !options.includePublished) {
+      console.log('⏭️  Skipping published episode - use --include-published to update published episodes')
       return { success: true, skipped: true, reason: 'published' }
+    }
+    
+    // Warn when updating published episodes
+    if (rssEpisode.status === 'published' && options.includePublished) {
+      console.log('⚠️  WARNING: Updating already published episode!')
     }
     
     if (options.dryRun) {
@@ -229,6 +236,10 @@ async function main() {
     
     if (options.updateSchedule) {
       console.log('⏰ SCHEDULE UPDATE MODE - Schedule times will be updated to 4 AM Prague time\n')
+    }
+    
+    if (options.includePublished) {
+      console.log('⚠️  INCLUDE PUBLISHED MODE - Published episodes will also be updated (use with caution!)\n')
     }
     
     if (options.descriptionOnly && options.audioOnly) {

@@ -11,7 +11,16 @@ import { createPragueTime4AMISO } from './timezone-utils.js'
 /**
  * Default episode description used for all episodes
  */
-export const DEFAULT_EPISODE_DESCRIPTION = `<p>Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň.</p><p></p><p>📖 Toto zamyslenie nájdeš aj na našom webe <a href="https://www.chliebnaskazdodenny.sk">chliebnaskazdodenny.sk</a></p><p>#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie</p>`
+export const DEFAULT_EPISODE_DESCRIPTION = `
+<p>Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň.</p>
+<p>📖 Toto zamyslenie nájdeš aj na našom webe <a href="https://www.chliebnaskazdodenny.sk">chliebnaskazdodenny.sk</a></p>
+<p></p>
+<p>Budujme komunitu aj na sieťach:</p>
+<p><a href="https://www.instagram.com/chlieb.nas.kazdodenny">instagram.com/chlieb.nas.kazdodenny</a></p>
+<p><a href="https://www.facebook.com/chlieb.nas.kazdodenny">facebook.com/chlieb.nas.kazdodenny</a></p>
+<p></p>
+<p>#chliebnaskazdodenny #zamyslenie #kazdyden #Boh #stisenie</p>
+`
 
 /**
  * Makes a request to RSS.com API
