@@ -1,0 +1,11 @@
+# Robots.txt for Chlieb náš každodenný
+# https://chliebnaskazdodenny.sk/
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://chliebnaskazdodenny.sk/sitemap.xml
+
+# Crawl delay (optional, be polite to servers)
+Crawl-delay: 1

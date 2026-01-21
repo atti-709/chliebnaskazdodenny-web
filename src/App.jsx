@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { isAfter, format, addDays, subDays } from 'date-fns'
-import { sk } from 'date-fns/locale'
 import { useDevotional } from './hooks/useDevotional'
 import { useDateNavigation } from './hooks/useDateNavigation'
 import { useAvailableDates } from './hooks/useAvailableDates'
+import { useMetaTags } from './hooks/useMetaTags'
 import Header from './components/Header'
 import LoadingSpinner from './components/LoadingSpinner'
 import DevotionalContent from './components/DevotionalContent'
@@ -78,11 +78,8 @@ function App() {
     }
   }, [availableDates, currentDate])
 
-  // Update page title with current date
-  useEffect(() => {
-    const dateStr = format(currentDate, 'd. MMMM yyyy', { locale: sk })
-    document.title = `${dateStr} - Chlieb náš každodenný`
-  }, [currentDate])
+  // Update meta tags for SEO and social sharing
+  useMetaTags({ currentDate, devotional })
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">

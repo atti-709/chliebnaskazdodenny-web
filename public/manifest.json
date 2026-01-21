@@ -1,0 +1,51 @@
+{
+  "name": "Chlieb náš každodenný",
+  "short_name": "Chlieb náš",
+  "description": "Denné duchovné zamyslenia a modlitby pre váš každodenný duchovný rast",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9F9F9",
+  "theme_color": "#8B9D83",
+  "orientation": "portrait-primary",
+  "lang": "sk",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "religion",
+    "education",
+    "lifestyle"
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dnešné zamyslenie",
+      "short_name": "Dnes",
+      "description": "Otvoriť dnešné zamyslenie",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
