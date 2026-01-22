@@ -1,5 +1,6 @@
 import { NotionBlocksRenderer } from './NotionBlocksRenderer/index.tsx'
 import PodcastPlayer from './SpotifyPlayer'
+import BibleVerse from './BibleVerse'
 
 // Strip Markdown formatting (asterisks) from text
 function stripMarkdown(text) {
@@ -56,22 +57,24 @@ function DevotionalContent({ devotional }) {
       {(devotional.verseDay || devotional.verseEvening) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Day Verse - Morning Reading (source of the quote) - Warm color */}
+          {/* Expanded to show full verse text from bible4u.net */}
           {devotional.verseDay && (
             <div className="bg-amber-50 rounded-lg p-6 border-l-4 border-amber-500">
               <p className="text-sm font-semibold text-amber-700 uppercase tracking-wide mb-2">
                 Čítanie
               </p>
-              <p className="text-lg text-gray-800 font-medium">{devotional.verseDay}</p>
+              <BibleVerse reference={devotional.verseDay} expanded={true} />
             </div>
           )}
 
           {/* Evening Verse - Evening Reading - Gray color */}
+          {/* Only reference, not expanded */}
           {devotional.verseEvening && (
             <div className="bg-gray-100 rounded-lg p-6 border-l-4 border-gray-500">
               <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
                 Večerné čítanie
               </p>
-              <p className="text-lg text-gray-800 font-medium">{devotional.verseEvening}</p>
+              <BibleVerse reference={devotional.verseEvening} expanded={false} />
             </div>
           )}
         </div>
