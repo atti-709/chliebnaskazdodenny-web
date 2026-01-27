@@ -1,61 +1,26 @@
 import { useEffect } from 'react'
 import { format } from 'date-fns'
-import { sk } from 'date-fns/locale'
 
 const BASE_URL = 'https://chliebnaskazdodenny.sk'
-const DEFAULT_TITLE = 'Chlieb náš každodenný - Denné duchovné zamyslenia'
-const DEFAULT_DESCRIPTION =
-  'Denné duchovné zamyslenia a modlitby pre váš každodenný duchovný rast. Počúvajte ako podcast alebo čítajte online.'
+const SITE_TITLE = 'Chlieb náš každodenný'
 
 /**
  * Updates meta tags dynamically for better SEO and social sharing
+ * Keeps title and description stable, only updates URL-related tags
  * @param {Object} options - Configuration options
  * @param {Date} options.currentDate - The current date being displayed
  * @param {Object} options.devotional - The devotional data (optional)
  */
 export function useMetaTags({ currentDate, devotional }) {
   useEffect(() => {
-    const dateStr = format(currentDate, 'd. MMMM yyyy', { locale: sk })
     const isoDate = format(currentDate, 'yyyy-MM-dd')
-
-    // Build title and description based on devotional content
-    let title = `${dateStr} - Chlieb náš každodenný`
-    let description = DEFAULT_DESCRIPTION
-
-    if (devotional) {
-      title = `${devotional.title} - ${dateStr} | Chlieb náš každodenný`
-
-      // Create description from devotional content
-      if (devotional.quote) {
-        description = `${devotional.quote} - Denné zamyslenie na ${dateStr}.`
-      } else {
-        description = `Duchovné zamyslenie na ${dateStr}. ${DEFAULT_DESCRIPTION}`
-      }
-
-      // Truncate description to ~155 characters for optimal SEO
-      if (description.length > 160) {
-        description = description.substring(0, 157) + '...'
-      }
-    }
-
     const url = `${BASE_URL}/?date=${isoDate}`
 
-    // Update document title
-    document.title = title
+    // Keep title and description stable
+    document.title = SITE_TITLE
 
-    // Update meta tags
-    updateMetaTag('description', description)
-    updateMetaTag('title', title)
-
-    // Update Open Graph tags
-    updateMetaTag('og:title', title, 'property')
-    updateMetaTag('og:description', description, 'property')
+    // Update URL-related meta tags only
     updateMetaTag('og:url', url, 'property')
-    updateMetaTag('og:type', devotional ? 'article' : 'website', 'property')
-
-    // Update Twitter tags
-    updateMetaTag('twitter:title', title, 'property')
-    updateMetaTag('twitter:description', description, 'property')
     updateMetaTag('twitter:url', url, 'property')
 
     // Update canonical URL
@@ -63,8 +28,11 @@ export function useMetaTags({ currentDate, devotional }) {
 
     // Add article-specific meta tags if we have a devotional
     if (devotional) {
+      updateMetaTag('og:type', 'article', 'property')
       updateMetaTag('article:published_time', isoDate, 'property')
       updateMetaTag('article:section', 'Duchovné zamyslenia', 'property')
+    } else {
+      updateMetaTag('og:type', 'website', 'property')
     }
   }, [currentDate, devotional])
 }
