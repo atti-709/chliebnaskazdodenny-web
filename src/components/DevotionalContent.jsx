@@ -48,7 +48,7 @@ function DevotionalContent({ devotional }) {
         <h2 className="text-2xl md:text-3xl font-display font-bold text-chnk-dark leading-tight">
           {devotional.title}
         </h2>
-        <div className="font-display text-sm md:text-base text-chnk-dark leading-6">
+        <div className="font-display text-base md:text-lg text-chnk-dark leading-7">
           <p>{quoteText}</p>
           {quoteReference && <p>({quoteReference})</p>}
         </div>
@@ -59,14 +59,14 @@ function DevotionalContent({ devotional }) {
         <div className="bg-chnk-primary-2 flex flex-col md:flex-row gap-3 items-center justify-center p-3 rounded-3xl md:rounded-4xl w-full">
           {/* Day Reading */}
           {devotional.verseDay && (
-            <div className="bg-chnk-primary flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
+            <div className="bg-white flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
               <div className="flex gap-2 items-center">
                 <img src={iconReading} alt="" className="h-[20px] md:h-[24px] w-auto" aria-hidden="true" />
                 <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
                   Čítanie
                 </p>
               </div>
-              <p className="font-body text-sm md:text-base text-chnk-dark">
+              <p className="font-body text-base md:text-lg text-chnk-dark">
                 {devotional.verseDay}
               </p>
             </div>
@@ -74,7 +74,7 @@ function DevotionalContent({ devotional }) {
 
           {/* Evening Reading */}
           {devotional.verseEvening && (
-            <div className="bg-chnk-primary flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
+            <div className="bg-white flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
               <div className="flex gap-2 items-center">
                 <img
                   src={iconReadingEvening}
@@ -86,7 +86,7 @@ function DevotionalContent({ devotional }) {
                   Večerné čítanie
                 </p>
               </div>
-              <p className="font-body text-sm md:text-base text-chnk-dark">
+              <p className="font-body text-base md:text-lg text-chnk-dark">
                 {devotional.verseEvening}
               </p>
             </div>
@@ -102,7 +102,7 @@ function DevotionalContent({ devotional }) {
       {/* Devotional Text */}
       <div className="w-full">
         <div
-          className="prose max-w-none font-display font-normal text-chnk-dark text-sm md:text-base leading-relaxed"
+          className="prose max-w-none font-display font-normal text-chnk-dark text-base md:text-lg leading-relaxed"
           style={{ lineHeight: '1.8' }}
         >
           <NotionBlocksRenderer content={devotional.text} />
@@ -111,11 +111,11 @@ function DevotionalContent({ devotional }) {
 
       {/* Prayer */}
       {prayerText && (
-        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-5 md:p-8 w-full">
+        <div className="border-l-[4px] border-chnk-dark bg-chnk-primary-2/30 rounded-r-2xl md:rounded-r-3xl flex flex-col gap-3 p-5 md:p-8 w-full">
           <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
             Modlitba
           </p>
-          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line">
+          <p className="font-display font-normal text-base md:text-lg text-chnk-dark leading-relaxed whitespace-pre-line">
             {prayerText}
           </p>
         </div>
@@ -123,11 +123,11 @@ function DevotionalContent({ devotional }) {
 
       {/* Questions */}
       {devotional.questions && (
-        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-5 md:p-8 w-full">
+        <div className="border-l-[4px] border-chnk-dark bg-chnk-primary-2/30 rounded-r-2xl md:rounded-r-3xl flex flex-col gap-3 p-5 md:p-8 w-full">
           <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
             Otázky na zamyslenie
           </p>
-          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line">
+          <p className="font-display font-normal text-base md:text-lg text-chnk-dark leading-relaxed whitespace-pre-line">
             {devotional.questions}
           </p>
         </div>

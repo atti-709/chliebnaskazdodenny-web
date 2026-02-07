@@ -112,7 +112,10 @@ function App() {
         ) : devotional ? (
           <DevotionalContent devotional={devotional} />
         ) : (
-          <EmptyState isFutureDate={isFutureDate} />
+          <EmptyState
+            isFutureDate={isFutureDate}
+            onGoToToday={() => handleDateSelect(format(today, 'yyyy-MM-dd'))}
+          />
         )}
       </main>
 

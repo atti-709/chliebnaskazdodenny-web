@@ -20,6 +20,15 @@ export default {
       borderRadius: {
         '4xl': '50px',
       },
+      animation: {
+        'pulse-slow': 'pulseSlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        pulseSlow: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.4', transform: 'scale(0.95)' },
+        },
+      },
     },
   },
   plugins: [],
