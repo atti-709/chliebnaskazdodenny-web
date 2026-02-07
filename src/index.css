@@ -19,8 +19,10 @@
   font-display: swap;
 }
 
+html,
 body {
   margin: 0;
+  background-color: #332e21;
   font-family:
     'Arimo',
     system-ui,
@@ -28,7 +30,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #ffffff;
 }
 
 @layer utilities {
