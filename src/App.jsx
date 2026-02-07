@@ -91,7 +91,7 @@ function App() {
   useMetaTags({ currentDate, devotional })
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f8f8f8] selection:bg-chnk-primary selection:text-chnk-dark">
       <Header
         currentDate={currentDate}
         today={today}

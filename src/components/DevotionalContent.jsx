@@ -44,13 +44,17 @@ function DevotionalContent({ devotional }) {
   return (
     <article className="fade-in flex flex-col gap-5 md:gap-8 items-center">
       {/* Title and Quote */}
-      <div className="text-center flex flex-col gap-2 items-center">
-        <h2 className="text-2xl md:text-3xl font-display font-bold text-chnk-dark leading-tight">
+      <div className="text-center flex flex-col gap-4 items-center mb-4">
+        <h2 className="text-3xl md:text-4xl font-display font-bold text-chnk-dark leading-tight">
           {devotional.title}
         </h2>
-        <div className="font-display text-sm md:text-base text-chnk-dark leading-6">
-          <p>{quoteText}</p>
-          {quoteReference && <p>({quoteReference})</p>}
+        <div className="font-display text-base md:text-lg text-chnk-dark/80 leading-7 max-w-2xl">
+          <p className="italic">{quoteText}</p>
+          {quoteReference && (
+            <p className="not-italic mt-1 text-sm md:text-base font-bold text-chnk-dark/60">
+              ({quoteReference})
+            </p>
+          )}
         </div>
       </div>
 
@@ -61,14 +65,15 @@ function DevotionalContent({ devotional }) {
           {devotional.verseDay && (
             <div className="bg-chnk-primary flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
               <div className="flex gap-2 items-center">
-                <img src={iconReading} alt="" className="h-[20px] md:h-[24px] w-auto" aria-hidden="true" />
-                <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
-                  Čítanie
-                </p>
+                <img
+                  src={iconReading}
+                  alt=""
+                  className="h-[20px] md:h-[24px] w-auto"
+                  aria-hidden="true"
+                />
+                <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">Čítanie</p>
               </div>
-              <p className="font-body text-sm md:text-base text-chnk-dark">
-                {devotional.verseDay}
-              </p>
+              <p className="font-body text-sm md:text-base text-chnk-dark">{devotional.verseDay}</p>
             </div>
           )}
 
@@ -111,11 +116,9 @@ function DevotionalContent({ devotional }) {
 
       {/* Prayer */}
       {prayerText && (
-        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-5 md:p-8 w-full">
-          <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
-            Modlitba
-          </p>
-          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line">
+        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-6 md:p-10 w-full bg-transparent shadow-none">
+          <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">Modlitba</p>
+          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line text-opacity-90">
             {prayerText}
           </p>
         </div>
@@ -123,11 +126,11 @@ function DevotionalContent({ devotional }) {
 
       {/* Questions */}
       {devotional.questions && (
-        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-5 md:p-8 w-full">
+        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-6 md:p-10 w-full bg-transparent shadow-none">
           <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
             Otázky na zamyslenie
           </p>
-          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line">
+          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line text-opacity-90">
             {devotional.questions}
           </p>
         </div>

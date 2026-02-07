@@ -68,7 +68,7 @@ function PodcastPlayer({ embedUri, episodeDate }) {
   }
 
   return (
-    <div className="my-8">
+    <div className="my-8 w-full max-w-2xl mx-auto bg-white p-4 rounded-3xl shadow-sm">
       <iframe
         style={{ borderRadius: '12px' }}
         src={finalEmbedUri}
@@ -79,7 +79,7 @@ function PodcastPlayer({ embedUri, episodeDate }) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
         loading="lazy"
         scrolling="no"
-        className="shadow-md"
+        className="w-full"
         title="Podcast Episode Player"
       ></iframe>
     </div>

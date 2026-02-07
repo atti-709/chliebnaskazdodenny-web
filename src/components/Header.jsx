@@ -42,14 +42,17 @@ function Header({
         <a href="/" className="h-[28px] md:h-[40px] shrink-0">
           <img alt="ChNK Logo" className="h-full w-auto" src={logoHeader} />
         </a>
-        <a href="/" className="font-display font-bold text-base md:text-2xl text-chnk-primary text-center leading-tight no-underline">
+        <a
+          href="/"
+          className="font-display font-bold text-base md:text-2xl text-chnk-primary text-center leading-tight no-underline"
+        >
           Chlieb náš každodenný
         </a>
         <div className="w-[28px] md:w-[40px] shrink-0" />
       </div>
 
       {/* Date selector stripe */}
-      <div className="bg-white relative">
+      <div className="bg-[#f8f8f8] relative">
         <DateNavigation
           currentDate={currentDate}
           isToday={isToday}
