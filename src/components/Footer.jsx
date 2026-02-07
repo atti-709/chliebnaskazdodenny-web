@@ -22,7 +22,7 @@ function Footer() {
 
         <Link
           to="/kontakt"
-          className="font-display font-bold text-sm md:text-base text-chnk-primary text-center hover:opacity-80 smooth-transition"
+          className="font-display font-bold text-sm md:text-base text-chnk-primary text-center hover:text-white transition-colors duration-300"
         >
           Kontakt
         </Link>

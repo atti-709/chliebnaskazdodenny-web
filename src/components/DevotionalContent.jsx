@@ -54,41 +54,36 @@ function DevotionalContent({ devotional }) {
         </div>
       </div>
 
-      {/* Bible References - Two Column Layout */}
+      {/* Bible References */}
       {(devotional.verseDay || devotional.verseEvening) && (
-        <div className="bg-chnk-primary-2 flex flex-col md:flex-row gap-3 items-center justify-center p-3 rounded-3xl md:rounded-4xl w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
           {/* Day Reading */}
           {devotional.verseDay && (
-            <div className="bg-white flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
-              <div className="flex gap-2 items-center">
-                <img src={iconReading} alt="" className="h-[20px] md:h-[24px] w-auto" aria-hidden="true" />
-                <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
+            <div className="flex items-center gap-4 md:gap-5 bg-chnk-primary-2/40 border border-chnk-primary rounded-2xl px-5 py-4 md:px-6 md:py-5 w-full">
+              <img src={iconReading} alt="" className="h-[28px] md:h-[32px] w-auto shrink-0" aria-hidden="true" />
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <p className="font-display font-bold text-base md:text-lg text-chnk-dark">
                   Čítanie
                 </p>
+                <p className="font-body text-base md:text-lg text-chnk-dark/70">
+                  {devotional.verseDay}
+                </p>
               </div>
-              <p className="font-body text-base md:text-lg text-chnk-dark">
-                {devotional.verseDay}
-              </p>
             </div>
           )}
 
           {/* Evening Reading */}
           {devotional.verseEvening && (
-            <div className="bg-white flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
-              <div className="flex gap-2 items-center">
-                <img
-                  src={iconReadingEvening}
-                  alt=""
-                  className="h-[20px] md:h-[24px] w-auto"
-                  aria-hidden="true"
-                />
-                <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
+            <div className="flex items-center gap-4 md:gap-5 bg-chnk-dark/[0.04] border border-chnk-dark/10 rounded-2xl px-5 py-4 md:px-6 md:py-5 w-full">
+              <img src={iconReadingEvening} alt="" className="h-[28px] md:h-[32px] w-auto shrink-0" aria-hidden="true" />
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <p className="font-display font-bold text-base md:text-lg text-chnk-dark">
                   Večerné čítanie
                 </p>
+                <p className="font-body text-base md:text-lg text-chnk-dark/70">
+                  {devotional.verseEvening}
+                </p>
               </div>
-              <p className="font-body text-base md:text-lg text-chnk-dark">
-                {devotional.verseEvening}
-              </p>
             </div>
           )}
         </div>
