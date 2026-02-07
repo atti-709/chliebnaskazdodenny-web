@@ -1,16 +1,13 @@
 import { Link } from 'react-router-dom'
-import Header from './Header'
 import Footer from './Footer'
 
 function Contact() {
-  const currentYear = new Date().getFullYear()
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-[1146px] mx-auto px-4 md:px-[30px] py-8">
         <Link
           to="/"
-          className="inline-flex items-center text-accent hover:text-accent-dark smooth-transition mb-8"
+          className="inline-flex items-center text-chnk-dark hover:text-chnk-dark/70 smooth-transition mb-8 font-body"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -23,24 +20,28 @@ function Contact() {
           Späť na úvod
         </Link>
 
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Kontakt</h1>
+        <h1 className="text-4xl font-display font-bold text-chnk-dark mb-8">Kontakt</h1>
 
-        <div className="bg-white rounded-lg shadow-sm p-8 space-y-6">
+        <div className="border-[5px] border-chnk-dark rounded-4xl p-8 md:p-[50px] space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Licencia obsahu</h2>
-            <p className="text-gray-700">© Our Daily Bread Ministries, Grand Rapids, MI, USA</p>
+            <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">Licencia obsahu</h2>
+            <p className="text-chnk-dark font-body">
+              &copy; Our Daily Bread Ministries, Grand Rapids, MI, USA
+            </p>
           </div>
 
-          <div className="border-t border-gray-200 pt-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Slovenské vydanie</h2>
-            <div className="space-y-2 text-gray-700">
+          <div className="border-t border-chnk-dark/20 pt-6">
+            <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">
+              Slovenské vydanie
+            </h2>
+            <div className="space-y-2 text-chnk-dark font-body">
               <p className="font-medium">IN Network Slovakia, n.o.</p>
               <p>Sokolská 12, 984 01 Lučenec</p>
               <p>
                 <span className="font-medium">Tel. / WhatsApp:</span>{' '}
                 <a
                   href="tel:+421907169875"
-                  className="text-accent hover:text-accent-dark smooth-transition"
+                  className="text-chnk-dark underline hover:text-chnk-dark/70 smooth-transition"
                 >
                   +421 907 169 875
                 </a>
@@ -49,7 +50,7 @@ function Contact() {
                 <span className="font-medium">E-mail:</span>{' '}
                 <a
                   href="mailto:innetwork.sk@gmail.com"
-                  className="text-accent hover:text-accent-dark smooth-transition"
+                  className="text-chnk-dark underline hover:text-chnk-dark/70 smooth-transition"
                 >
                   innetwork.sk@gmail.com
                 </a>
@@ -60,7 +61,7 @@ function Contact() {
                   href="https://innetwork.sk/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent hover:text-accent-dark smooth-transition"
+                  className="text-chnk-dark underline hover:text-chnk-dark/70 smooth-transition"
                 >
                   innetwork.sk
                 </a>

@@ -1,6 +1,6 @@
 export function ChevronLeftIcon() {
   return (
-    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-chnk-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
     </svg>
   )
@@ -8,7 +8,7 @@ export function ChevronLeftIcon() {
 
 export function ChevronRightIcon() {
   return (
-    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-chnk-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
   )
@@ -17,7 +17,7 @@ export function ChevronRightIcon() {
 export function BookIcon() {
   return (
     <svg
-      className="w-16 h-16 mx-auto text-gray-300"
+      className="w-16 h-16 mx-auto text-chnk-dark/30"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"

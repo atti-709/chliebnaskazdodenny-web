@@ -4,12 +4,21 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['Merriweather', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Rustic', 'Georgia', 'serif'],
+        body: ['Arimo', 'system-ui', 'sans-serif'],
+        serif: ['Rustic', 'Georgia', 'serif'],
+        sans: ['Arimo', 'system-ui', 'sans-serif'],
       },
       colors: {
-        accent: '#8B9D83',
-        'accent-hover': '#7A8C73',
+        'chnk-dark': '#332e21',
+        'chnk-primary': '#d7d09a',
+        'chnk-primary-2': '#e5e0b5',
+        'chnk-neutral': '#eaeaea',
+        accent: '#d7d09a',
+        'accent-hover': '#c9c188',
+      },
+      borderRadius: {
+        '4xl': '50px',
       },
     },
   },
