@@ -20,6 +20,13 @@ function Header({
   const isToday = format(currentDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
   const [isClosing, setIsClosing] = useState(false)
   const [isPickerMounted, setIsPickerMounted] = useState(showDatePicker)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 4)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     if (showDatePicker) {
@@ -36,7 +43,7 @@ function Header({
   }, [showDatePicker, isPickerMounted])
 
   return (
-    <header className="sticky top-0 z-50">
+    <header className={`sticky top-0 z-50 transition-shadow duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
       {/* Dark brown header bar */}
       <div className="bg-chnk-dark flex items-center justify-between px-3 py-3 md:px-[30px] md:py-[16px]">
         <a href="/" className="h-[28px] md:h-[40px] shrink-0">

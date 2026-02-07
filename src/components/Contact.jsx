@@ -1,10 +1,24 @@
 import { Link } from 'react-router-dom'
 import Footer from './Footer'
+import logoHeader from '../assets/logo-header.svg'
 
 function Contact() {
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-[1146px] mx-auto px-4 md:px-[30px] py-8">
+      {/* Header */}
+      <header className="sticky top-0 z-50">
+        <div className="bg-chnk-dark flex items-center justify-between px-3 py-3 md:px-[30px] md:py-[16px]">
+          <a href="/" className="h-[28px] md:h-[40px] shrink-0">
+            <img alt="ChNK Logo" className="h-full w-auto" src={logoHeader} />
+          </a>
+          <a href="/" className="font-display font-bold text-base md:text-2xl text-chnk-primary text-center leading-tight no-underline">
+            Chlieb náš každodenný
+          </a>
+          <div className="w-[28px] md:w-[40px] shrink-0" />
+        </div>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-8">
         <Link
           to="/"
           className="inline-flex items-center text-chnk-dark hover:text-chnk-dark/70 smooth-transition mb-8 font-body"
@@ -22,7 +36,7 @@ function Contact() {
 
         <h1 className="text-4xl font-display font-bold text-chnk-dark mb-8">Kontakt</h1>
 
-        <div className="border-[5px] border-chnk-dark rounded-4xl p-8 md:p-[50px] space-y-6">
+        <div className="border-l-[4px] border-chnk-dark bg-chnk-primary-2/30 rounded-r-2xl md:rounded-r-3xl p-8 md:p-[50px] space-y-6">
           <div>
             <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">Licencia obsahu</h2>
             <p className="text-chnk-dark font-body">

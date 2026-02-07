@@ -117,11 +117,11 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
               disabled={!isAvailable || isSelected}
               className={`
                 aspect-square p-1 rounded-md text-xs font-body smooth-transition
-                ${!isCurrentMonth ? 'text-chnk-dark/20' : ''}
-                ${isCurrentMonth && !isAvailable ? 'text-chnk-dark/30 cursor-not-allowed opacity-40' : ''}
-                ${isCurrentMonth && isAvailable && !isSelected ? 'text-chnk-dark hover:bg-chnk-primary-2 cursor-pointer' : ''}
+                ${!isCurrentMonth ? 'text-chnk-dark/15' : ''}
+                ${isCurrentMonth && !isAvailable ? 'text-chnk-dark/30 cursor-not-allowed line-through decoration-chnk-dark/20' : ''}
+                ${isCurrentMonth && isAvailable && !isSelected ? 'text-chnk-dark hover:bg-chnk-primary-2 cursor-pointer font-medium' : ''}
                 ${isSelected ? 'bg-chnk-dark text-white font-semibold cursor-default' : ''}
-                ${isToday && !isSelected && isAvailable ? 'ring-1 ring-chnk-dark ring-inset' : ''}
+                ${isToday && !isSelected && isAvailable ? 'ring-2 ring-chnk-dark ring-inset' : ''}
               `}
             >
               {format(day, 'd')}
@@ -142,10 +142,10 @@ function DatePicker({ currentDate, today, onDateSelect, onClose, isClosing, avai
           }}
           disabled={!availableDates.has(format(today, 'yyyy-MM-dd'))}
           className={`
-            w-full py-1.5 px-3 rounded-lg text-xs font-body font-medium smooth-transition
+            w-full py-2 px-4 rounded-full text-xs font-display font-bold smooth-transition
             ${
               availableDates.has(format(today, 'yyyy-MM-dd'))
-                ? 'bg-chnk-primary-2 hover:bg-chnk-primary text-chnk-dark cursor-pointer'
+                ? 'bg-chnk-dark hover:bg-chnk-dark/80 text-white cursor-pointer'
                 : 'bg-chnk-neutral/50 text-chnk-dark/40 cursor-not-allowed opacity-50'
             }
           `}
