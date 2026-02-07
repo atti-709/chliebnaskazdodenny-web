@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import DateNavigation from './DateNavigation'
 import DatePicker from './DatePicker'
+import logoHeader from '../assets/logo-header.svg'
 
 function Header({
   currentDate,
@@ -14,6 +15,7 @@ function Header({
   availableDates,
   hasPreviousDate,
   hasNextDate,
+  episodeNumber,
 }) {
   const isToday = format(currentDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
   const [isClosing, setIsClosing] = useState(false)
@@ -24,45 +26,51 @@ function Header({
       setIsPickerMounted(true)
       setIsClosing(false)
     } else if (isPickerMounted) {
-      // Trigger close animation
       setIsClosing(true)
       const timer = setTimeout(() => {
         setIsPickerMounted(false)
         setIsClosing(false)
-      }, 200) // Match animation duration
+      }, 200)
       return () => clearTimeout(timer)
     }
   }, [showDatePicker, isPickerMounted])
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-2xl md:text-3xl font-serif font-light text-center text-gray-800 mb-6">
+    <header className="sticky top-0 z-50">
+      {/* Dark brown header bar */}
+      <div className="bg-chnk-dark flex items-center justify-between px-3 py-3 md:px-[30px] md:py-[16px]">
+        <a href="/" className="h-[28px] md:h-[40px] shrink-0">
+          <img alt="ChNK Logo" className="h-full w-auto" src={logoHeader} />
+        </a>
+        <a href="/" className="font-display font-bold text-base md:text-2xl text-chnk-primary text-center leading-tight no-underline">
           Chlieb náš každodenný
-        </h1>
+        </a>
+        <div className="w-[28px] md:w-[40px] shrink-0" />
+      </div>
 
-        <div className="relative">
-          <DateNavigation
+      {/* Date selector stripe */}
+      <div className="bg-white relative">
+        <DateNavigation
+          currentDate={currentDate}
+          isToday={isToday}
+          onPreviousDay={onPreviousDay}
+          onNextDay={onNextDay}
+          onToggleDatePicker={onToggleDatePicker}
+          hasPreviousDate={hasPreviousDate}
+          hasNextDate={hasNextDate}
+          episodeNumber={episodeNumber}
+        />
+
+        {isPickerMounted && (
+          <DatePicker
             currentDate={currentDate}
-            isToday={isToday}
-            onPreviousDay={onPreviousDay}
-            onNextDay={onNextDay}
-            onToggleDatePicker={onToggleDatePicker}
-            hasPreviousDate={hasPreviousDate}
-            hasNextDate={hasNextDate}
+            today={today}
+            onDateSelect={onDateSelect}
+            onClose={onToggleDatePicker}
+            isClosing={isClosing}
+            availableDates={availableDates}
           />
-
-          {isPickerMounted && (
-            <DatePicker
-              currentDate={currentDate}
-              today={today}
-              onDateSelect={onDateSelect}
-              onClose={onToggleDatePicker}
-              isClosing={isClosing}
-              availableDates={availableDates}
-            />
-          )}
-        </div>
+        )}
       </div>
     </header>
   )

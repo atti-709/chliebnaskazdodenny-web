@@ -78,11 +78,20 @@ function App() {
     }
   }, [availableDates, currentDate])
 
+  // Compute episode number from available dates
+  const episodeNumber = useMemo(() => {
+    if (availableDates.size === 0) return null
+    const sortedDates = [...availableDates].sort()
+    const currentDateStr = format(currentDate, 'yyyy-MM-dd')
+    const index = sortedDates.indexOf(currentDateStr)
+    return index >= 0 ? index + 1 : null
+  }, [availableDates, currentDate])
+
   // Update meta tags for SEO and social sharing
   useMetaTags({ currentDate, devotional })
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen bg-white">
       <Header
         currentDate={currentDate}
         today={today}
@@ -94,9 +103,10 @@ function App() {
         availableDates={availableDates}
         hasPreviousDate={hasPreviousDate}
         hasNextDate={hasNextDate}
+        episodeNumber={episodeNumber}
       />
 
-      <main className="max-w-3xl mx-auto px-4 py-8 md:py-12">
+      <main className="max-w-3xl mx-auto px-4 md:px-6 pt-5 pb-10 md:pt-8 md:pb-16">
         {loading || datesLoading ? (
           <LoadingSpinner />
         ) : devotional ? (

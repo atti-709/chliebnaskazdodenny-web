@@ -4,8 +4,8 @@
   "description": "Pomáhame ti zastaviť sa, načúvať a rásť. Každý deň.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F9F9F9",
-  "theme_color": "#8B9D83",
+  "background_color": "#FFFFFF",
+  "theme_color": "#332e21",
   "orientation": "portrait-primary",
   "lang": "sk",
   "icons": [

@@ -6,10 +6,10 @@ function EmptyState({ isFutureDate }) {
       <div className="mb-4">
         <BookIcon />
       </div>
-      <h3 className="text-xl font-serif text-gray-600 mb-2">
+      <h3 className="text-xl font-display font-bold text-chnk-dark mb-2">
         {isFutureDate ? 'Zamyslenie ešte nie je dostupné' : 'Zamyslenie nenájdené'}
       </h3>
-      <p className="text-gray-500">
+      <p className="text-chnk-dark/60 font-body">
         {isFutureDate
           ? 'Toto zamyslenie bude dostupné v uvedený deň.'
           : 'Pre tento dátum nie je k dispozícii žiadne zamyslenie.'}

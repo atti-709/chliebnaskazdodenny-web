@@ -1,5 +1,7 @@
 import { NotionBlocksRenderer } from './NotionBlocksRenderer/index.tsx'
 import PodcastPlayer from './SpotifyPlayer'
+import iconReading from '../assets/icon-reading.svg'
+import iconReadingEvening from '../assets/icon-reading-evening.svg'
 
 // Strip Markdown formatting (asterisks) from text
 function stripMarkdown(text) {
@@ -40,73 +42,94 @@ function DevotionalContent({ devotional }) {
   const prayerText = stripMarkdown(devotional.prayer)
 
   return (
-    <article className="fade-in space-y-8">
+    <article className="fade-in flex flex-col gap-5 md:gap-8 items-center">
       {/* Title and Quote */}
-      <div className="text-center space-y-3">
-        <h2 className="text-3xl md:text-4xl font-serif font-light text-gray-800">
+      <div className="text-center flex flex-col gap-2 items-center">
+        <h2 className="text-2xl md:text-3xl font-display font-bold text-chnk-dark leading-tight">
           {devotional.title}
         </h2>
-        <div className="text-lg text-accent font-medium">
-          <p className="italic">{quoteText}</p>
-          {quoteReference && <p className="mt-1 italic">({quoteReference})</p>}
+        <div className="font-display text-sm md:text-base text-chnk-dark leading-6">
+          <p>{quoteText}</p>
+          {quoteReference && <p>({quoteReference})</p>}
         </div>
       </div>
 
       {/* Bible References - Two Column Layout */}
       {(devotional.verseDay || devotional.verseEvening) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Day Verse - Morning Reading (source of the quote) - Warm color */}
+        <div className="bg-chnk-primary-2 flex flex-col md:flex-row gap-3 items-center justify-center p-3 rounded-3xl md:rounded-4xl w-full">
+          {/* Day Reading */}
           {devotional.verseDay && (
-            <div className="bg-amber-50 rounded-lg p-6 border-l-4 border-amber-500">
-              <p className="text-sm font-semibold text-amber-700 uppercase tracking-wide mb-2">
-                Čítanie
+            <div className="bg-chnk-primary flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
+              <div className="flex gap-2 items-center">
+                <img src={iconReading} alt="" className="h-[20px] md:h-[24px] w-auto" aria-hidden="true" />
+                <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
+                  Čítanie
+                </p>
+              </div>
+              <p className="font-body text-sm md:text-base text-chnk-dark">
+                {devotional.verseDay}
               </p>
-              <p className="text-lg text-gray-800 font-medium">{devotional.verseDay}</p>
             </div>
           )}
 
-          {/* Evening Verse - Evening Reading - Gray color */}
+          {/* Evening Reading */}
           {devotional.verseEvening && (
-            <div className="bg-gray-100 rounded-lg p-6 border-l-4 border-gray-500">
-              <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
-                Večerné čítanie
+            <div className="bg-chnk-primary flex-1 flex flex-col gap-2 items-start justify-center p-5 md:p-8 rounded-2xl md:rounded-4xl w-full min-w-0">
+              <div className="flex gap-2 items-center">
+                <img
+                  src={iconReadingEvening}
+                  alt=""
+                  className="h-[20px] md:h-[24px] w-auto"
+                  aria-hidden="true"
+                />
+                <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
+                  Večerné čítanie
+                </p>
+              </div>
+              <p className="font-body text-sm md:text-base text-chnk-dark">
+                {devotional.verseEvening}
               </p>
-              <p className="text-lg text-gray-800 font-medium">{devotional.verseEvening}</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Podcast Player (supports Podbean, Spotify, etc.) */}
-      <PodcastPlayer embedUri={devotional.spotifyEmbedUri} episodeDate={devotional.date} />
+      {/* Podcast Player */}
+      <div className="w-full">
+        <PodcastPlayer embedUri={devotional.spotifyEmbedUri} episodeDate={devotional.date} />
+      </div>
 
       {/* Devotional Text */}
-      <div
-        className="prose prose-lg max-w-none font-serif text-gray-700 leading-relaxed"
-        style={{
-          lineHeight: '1.8',
-        }}
-      >
-        <NotionBlocksRenderer content={devotional.text} />
+      <div className="w-full">
+        <div
+          className="prose max-w-none font-display font-normal text-chnk-dark text-sm md:text-base leading-relaxed"
+          style={{ lineHeight: '1.8' }}
+        >
+          <NotionBlocksRenderer content={devotional.text} />
+        </div>
       </div>
 
       {/* Prayer */}
       {prayerText && (
-        <div className="bg-purple-50 rounded-lg p-6 border-l-4 border-purple-500">
-          <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">
+        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-5 md:p-8 w-full">
+          <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
             Modlitba
           </p>
-          <p className="text-base text-gray-700 italic whitespace-pre-line">{prayerText}</p>
+          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line">
+            {prayerText}
+          </p>
         </div>
       )}
 
       {/* Questions */}
       {devotional.questions && (
-        <div className="bg-blue-50 rounded-lg p-6 border-l-4 border-blue-500">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+        <div className="border-[3px] md:border-[4px] border-chnk-dark rounded-2xl md:rounded-4xl flex flex-col gap-3 p-5 md:p-8 w-full">
+          <p className="font-display font-bold text-lg md:text-xl text-chnk-dark">
             Otázky na zamyslenie
           </p>
-          <p className="text-base text-gray-700 whitespace-pre-line">{devotional.questions}</p>
+          <p className="font-display font-normal text-sm md:text-base text-chnk-dark leading-relaxed whitespace-pre-line">
+            {devotional.questions}
+          </p>
         </div>
       )}
     </article>
