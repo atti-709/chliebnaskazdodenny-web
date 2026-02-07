@@ -21,12 +21,12 @@ export default {
         '4xl': '50px',
       },
       animation: {
-        'pulse-slow': 'floatPulse 2.4s ease-in-out infinite',
+        'turn-pages': 'turnPages 6s linear infinite',
       },
       keyframes: {
-        floatPulse: {
-          '0%, 100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
-          '50%': { opacity: '0.5', transform: 'translateY(-8px) scale(1.05)' },
+        turnPages: {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(-360deg)' },
         },
       },
     },
