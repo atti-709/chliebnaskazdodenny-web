@@ -1,20 +1,26 @@
 const CX = 33.14
 const CY = 34.713
 const R_OUT = 26
-const R_IN = 6
 const RAY_COUNT = 15
 const STEP = 360 / RAY_COUNT
-const TIP_HALF = 3
-const BASE_HALF = 12
-
-function svgPt(r, deg) {
-  const rad = (deg * Math.PI) / 180
-  return `${(CX + r * Math.sin(rad)).toFixed(2)} ${(CY - r * Math.cos(rad)).toFixed(2)}`
-}
+const HALF_W = 1.38 // half the ray width (matches original ~2.76 unit width)
 
 const RAYS = Array.from({ length: RAY_COUNT }, (_, i) => {
-  const a = i * STEP
-  return `M${svgPt(R_IN, a + BASE_HALF)}L${svgPt(R_OUT, a + TIP_HALF)}L${svgPt(R_OUT, a - TIP_HALF)}L${svgPt(R_IN, a - BASE_HALF)}Z`
+  const rad = (i * STEP * Math.PI) / 180
+  const sin = Math.sin(rad)
+  const cos = Math.cos(rad)
+  // perpendicular offset for constant width
+  const px = HALF_W * cos
+  const py = HALF_W * sin
+  // tip points (at R_OUT along ray direction)
+  const tx = CX + R_OUT * sin
+  const ty = CY - R_OUT * cos
+  return [
+    `M${(CX + px).toFixed(2)} ${(CY + py).toFixed(2)}`,
+    `L${(tx + px).toFixed(2)} ${(ty + py).toFixed(2)}`,
+    `L${(tx - px).toFixed(2)} ${(ty - py).toFixed(2)}`,
+    `L${(CX - px).toFixed(2)} ${(CY - py).toFixed(2)}Z`,
+  ].join('')
 }).join('')
 
 const BINDING =
