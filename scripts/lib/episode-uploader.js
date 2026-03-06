@@ -118,7 +118,8 @@ export async function uploadEpisode(episode, options = {}) {
       const existingEpisode = findExistingEpisode(
         options.existingEpisodes,
         notionEpisode.title,
-        episode.date
+        episode.date,
+        { episodeNumber: notionEpisode.episodeNumber }
       )
       
       if (existingEpisode) {

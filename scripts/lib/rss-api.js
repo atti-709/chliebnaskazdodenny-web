@@ -147,43 +147,29 @@ export async function testCredentials() {
 export async function getExistingEpisodes(limit = 1000) {
   try {
     const allEpisodes = []
-    // const statuses = ['draft', 'scheduled', 'published']
-    const statuses = ['draft', 'scheduled', 'published']
-    
-    // Fetch episodes for each status
-    for (const status of statuses) {
-      let offset = 0
-      const pageSize = 100 // RSS.com API max per request
-      
-      while (allEpisodes.length < limit) {
-        const fetchLimit = Math.min(pageSize, limit - allEpisodes.length)
-        const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${fetchLimit}&offset=${offset}&status=${status}`)
-        
-        // RSS.com v4 API returns episodes as root array, not wrapped in object
-        let episodes = []
-        if (Array.isArray(data)) {
-          episodes = data
-        } else {
-          // Fallback: check for common wrapper keys
-          episodes = data.items || data.data || data.episodes || []
-        }
-        
-        if (episodes.length === 0) {
-          // No more episodes to fetch for this status
-          break
-        }
-        
-        allEpisodes.push(...episodes)
-        
-        // If we got fewer episodes than requested, we've reached the end for this status
-        if (episodes.length < fetchLimit) {
-          break
-        }
-        
-        offset += episodes.length
+    const pageSize = 100 // RSS.com API max per request
+    let page = 1
+
+    while (allEpisodes.length < limit) {
+      const fetchLimit = Math.min(pageSize, limit - allEpisodes.length)
+      const data = await rssRequest(`/podcasts/${rssConfig.podcastId}/episodes?limit=${fetchLimit}&page=${page}`)
+
+      let episodes = []
+      if (Array.isArray(data)) {
+        episodes = data
+      } else {
+        episodes = data.items || data.data || data.episodes || []
       }
+
+      if (episodes.length === 0) break
+
+      allEpisodes.push(...episodes)
+
+      if (episodes.length < fetchLimit) break
+
+      page++
     }
-    
+
     return allEpisodes
   } catch (error) {
     console.error('⚠️  Could not fetch existing episodes:', error.message)
@@ -193,46 +179,54 @@ export async function getExistingEpisodes(limit = 1000) {
 }
 
 /**
- * Finds existing episode by title and date
+ * Finds existing episode by episode number, date, or title
  * @param {Array} existingEpisodes - Array of existing episodes
  * @param {string} title - Episode title to search for
  * @param {string} date - Episode date (YYYY-MM-DD)
- * @param {boolean} debug - Enable debug logging
+ * @param {Object} options - Additional match options
+ * @param {number} [options.episodeNumber] - iTunes episode number (most reliable match)
+ * @param {boolean} [options.debug] - Enable debug logging
  * @returns {Object|undefined} Found episode or undefined
  */
-export function findExistingEpisode(existingEpisodes, title, date, debug = false) {
+export function findExistingEpisode(existingEpisodes, title, date, options = {}) {
+  // Support legacy boolean signature: findExistingEpisode(eps, title, date, debug)
+  const { episodeNumber, debug } = typeof options === 'boolean'
+    ? { episodeNumber: undefined, debug: options }
+    : options
+
+  // Match by episode number first (most reliable)
+  if (episodeNumber != null) {
+    const match = existingEpisodes.find(ep =>
+      ep.itunes_episode != null && Number(ep.itunes_episode) === Number(episodeNumber)
+    )
+    if (match) {
+      if (debug) console.log(`   Matched by episode number: #${episodeNumber}`)
+      return match
+    }
+  }
+
   return existingEpisodes.find(episode => {
-    // RSS.com v4 API uses publish_datetime for published episodes
-    // and schedule_datetime for scheduled episodes
-    const episodeDate = episode.publish_datetime || 
-                       episode.schedule_datetime || 
-                       episode.publishedAt || 
-                       episode.published_at || 
+    const episodeDate = episode.publish_datetime ||
+                       episode.schedule_datetime ||
+                       episode.publishedAt ||
+                       episode.published_at ||
                        episode.date
-    
+
     if (!episodeDate) {
       if (debug) console.log(`   No date found for episode: ${episode.title}`)
       return false
     }
-    
-    // Parse the date and extract YYYY-MM-DD in UTC
-    // RSS.com returns ISO 8601 format like "2026-01-01T05:00:00.000Z"
-    const episodeDateStr = episodeDate.substring(0, 10) // Extract YYYY-MM-DD directly
-    
+
+    const episodeDateStr = episodeDate.substring(0, 10)
+
     if (debug) {
       const status = episode.status || 'unknown'
       console.log(`   Comparing: "${episodeDateStr}" with "${date}" [${status}] (title: "${episode.title}")`)
     }
-    
-    // Match by date first (more reliable), then by title
-    if (episodeDateStr === date) {
-      return true
-    }
-    
-    if (title && episode.title === title) {
-      return true
-    }
-    
+
+    if (episodeDateStr === date) return true
+    if (title && episode.title === title) return true
+
     return false
   })
 }
