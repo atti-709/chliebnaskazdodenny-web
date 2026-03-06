@@ -85,25 +85,37 @@ export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
  */
 async function getEpisodeNumber(targetDate) {
   try {
-    // Fetch all episodes sorted by date ascending
-    const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, {
-      body: {
+    // Fetch all episodes sorted by date ascending, paginating through all results
+    let allResults = []
+    let hasMore = true
+    let startCursor = undefined
+
+    while (hasMore) {
+      const body = {
         sorts: [
           {
             property: 'Date',
             direction: 'ascending',
           },
         ],
-        page_size: 100, // Adjust if you have more episodes
-      },
-    })
-    
+        page_size: 100,
+      }
+      if (startCursor) {
+        body.start_cursor = startCursor
+      }
+
+      const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, { body })
+      allResults = allResults.concat(response.results)
+      hasMore = response.has_more
+      startCursor = response.next_cursor
+    }
+
     // Find the position of the target date
-    const episodeIndex = response.results.findIndex(page => {
+    const episodeIndex = allResults.findIndex(page => {
       const dateProperty = page.properties.Date?.date?.start || page.properties.date?.date?.start
       return dateProperty && dateProperty.split('T')[0] === targetDate
     })
-    
+
     // Episode number is index + 1 (1-based)
     return episodeIndex >= 0 ? episodeIndex + 1 : 1
   } catch (error) {
