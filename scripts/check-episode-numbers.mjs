@@ -112,7 +112,14 @@ async function main() {
     if (missing.length > 0) {
       hasIssues = true
       console.log('\n⚠️  GAPS — missing episode numbers:')
-      console.log(`   ${missing.join(', ')}`)
+      for (const num of missing) {
+        // Show neighbors for context
+        const before = eps.filter(e => e.number === num - 1)[0]
+        const after = eps.filter(e => e.number === num + 1)[0]
+        const beforeStr = before ? `#${num - 1} "${before.title}" ${before.date.substring(0, 10)}` : '(none)'
+        const afterStr = after ? `#${num + 1} "${after.title}" ${after.date.substring(0, 10)}` : '(none)'
+        console.log(`   #${num} — MISSING (between ${beforeStr} and ${afterStr})`)
+      }
     }
 
     // Check if starts at 1
@@ -134,7 +141,8 @@ async function main() {
     console.log('\n   Episodes:')
     for (const ep of eps) {
       const dup = numCounts.get(ep.number).length > 1 ? ' ⚠️ DUP' : ''
-      console.log(`     #${String(ep.number).padStart(3)} — "${ep.title}" (${ep.status})${dup}`)
+      const dateStr = ep.date !== 'unknown' ? ep.date.substring(0, 10) : 'unknown'
+      console.log(`     #${String(ep.number).padStart(3)} — ${dateStr} — "${ep.title}" (${ep.status})${dup}`)
     }
     console.log('')
   }

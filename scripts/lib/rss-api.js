@@ -225,7 +225,6 @@ export function findExistingEpisode(existingEpisodes, title, date, options = {})
     }
 
     if (episodeDateStr === date) return true
-    if (title && episode.title === title) return true
 
     return false
   })
