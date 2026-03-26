@@ -26,6 +26,13 @@ function Footer() {
         >
           Kontakt
         </Link>
+
+        <Link
+          to="/kontakt#podporte-nas"
+          className="font-display font-bold text-sm md:text-base text-chnk-primary text-center hover:text-white transition-colors duration-300"
+        >
+          Podporte nás
+        </Link>
       </div>
     </footer>
   )
