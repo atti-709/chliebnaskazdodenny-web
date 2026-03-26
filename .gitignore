@@ -31,6 +31,9 @@ dist-ssr
 # ESLint
 .eslintcache
 
+# Superpowers brainstorming artifacts
+.superpowers/
+
 # Devotional data files (large files, not for git)
 devotionals-*.json
 scripts/assets/

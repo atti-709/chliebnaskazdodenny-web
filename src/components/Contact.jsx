@@ -48,7 +48,37 @@ function Contact() {
         <h1 className="text-4xl font-display font-bold text-chnk-dark mb-8">Kontakt</h1>
 
         <div className="border-l-[4px] border-chnk-dark bg-chnk-primary-2/30 rounded-r-2xl md:rounded-r-3xl p-8 md:p-[50px] space-y-6">
-          <div>
+          <div id="podporte-nas" className="scroll-mt-20">
+            <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">
+              Podporte nás
+            </h2>
+            <div className="space-y-4 text-chnk-dark font-body">
+              <p>
+                Naša nezisková organizácia je plne prevádzkovaná z dobrovoľných
+                darov a príspevkov jednotlivcom, či organizácií. Môžete podporiť
+                našu činnosť zaslaním finančného daru na účet:
+              </p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <img
+                  src={qrDonate}
+                  alt="QR kód pre darovanie"
+                  className="w-[120px] h-[120px] rounded-xl border-2 border-chnk-dark"
+                />
+                <div className="leading-relaxed">
+                  <p>
+                    <span className="font-medium">IBAN:</span>{' '}
+                    SK15 5600 0000 0060 1444 0004
+                  </p>
+                  <p>
+                    <span className="font-medium">BIC:</span>{' '}
+                    KOMASK2X
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-chnk-dark/20 pt-6">
             <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">Licencia obsahu</h2>
             <p className="text-chnk-dark font-body">
               &copy; Our Daily Bread Ministries, Grand Rapids, MI, USA
@@ -92,36 +122,6 @@ function Contact() {
                 </a>
               </p>
               <p>Publikáciu si môžete objednať písomne, telefonicky alebo emailom.</p>
-            </div>
-          </div>
-
-          <div id="podporte-nas" className="border-t border-chnk-dark/20 pt-6">
-            <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">
-              Podporte nás
-            </h2>
-            <div className="space-y-4 text-chnk-dark font-body">
-              <p>
-                Naša nezisková organizácia je plne prevádzkovaná z dobrovoľných
-                darov a príspevkov jednotlivcom, či organizácií. Môžete podporiť
-                našu činnosť zaslaním finančného daru na účet:
-              </p>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <img
-                  src={qrDonate}
-                  alt="QR kód pre darovanie"
-                  className="w-[120px] h-[120px] rounded-xl border-2 border-chnk-dark"
-                />
-                <div className="leading-relaxed">
-                  <p>
-                    <span className="font-medium">IBAN:</span>{' '}
-                    SK15 5600 0000 0060 1444 0004
-                  </p>
-                  <p>
-                    <span className="font-medium">BIC:</span>{' '}
-                    KOMASK2X
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
