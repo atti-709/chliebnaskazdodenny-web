@@ -1,8 +1,19 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Footer from './Footer'
 import logoHeader from '../assets/logo-header.svg'
+import qrDonate from '../assets/qr-donate.svg'
 
 function Contact() {
+  useEffect(() => {
+    if (window.location.hash === '#podporte-nas') {
+      const el = document.getElementById('podporte-nas')
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100)
+      }
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -81,6 +92,36 @@ function Contact() {
                 </a>
               </p>
               <p>Publikáciu si môžete objednať písomne, telefonicky alebo emailom.</p>
+            </div>
+          </div>
+
+          <div id="podporte-nas" className="border-t border-chnk-dark/20 pt-6">
+            <h2 className="text-xl font-display font-bold text-chnk-dark mb-4">
+              Podporte nás
+            </h2>
+            <div className="space-y-4 text-chnk-dark font-body">
+              <p>
+                Naša nezisková organizácia je plne prevádzkovaná z dobrovoľných
+                darov a príspevkov jednotlivcom, či organizácií. Môžete podporiť
+                našu činnosť zaslaním finančného daru na účet:
+              </p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <img
+                  src={qrDonate}
+                  alt="QR kód pre darovanie"
+                  className="w-[120px] h-[120px] rounded-xl border-2 border-chnk-dark"
+                />
+                <div className="leading-relaxed">
+                  <p>
+                    <span className="font-medium">IBAN:</span>{' '}
+                    SK15 5600 0000 0060 1444 0004
+                  </p>
+                  <p>
+                    <span className="font-medium">BIC:</span>{' '}
+                    KOMASK2X
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
