@@ -14,36 +14,29 @@
  *   --dry-run          Show what would be uploaded without actually uploading
  *   --start-date       Start date (YYYY-MM-DD) for episodes to upload
  *   --end-date         End date (YYYY-MM-DD) for episodes to upload
+ *   --year             Only scan EPIZÓDY/<YYYY>/ (default: all year folders)
  *   --force            Upload even if episode already exists (creates duplicate)
  * 
  * Environment Variables (add to .env.local):
  *   PODBEAN_CLIENT_ID       - Podbean API client ID
  *   PODBEAN_CLIENT_SECRET   - Podbean API client secret
  *   NOTION_API_KEY          - Notion integration token
- *   NOTION_DATABASE_ID      - Notion database ID for episodes
+ *   NOTION_DATABASE_IDS     - Notion database per year, e.g. "2026:<id>,2027:<id>"
  */
 
 import fs from 'fs/promises'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import { spawn } from 'child_process'
-import dotenv from 'dotenv'
+import { notionConfig } from './lib/config.js' // also loads .env.local
+import { getEpisodeFromNotion, updateNotionEmbedUri } from './lib/notion-api.js'
+import { scanEpisodesDirectory } from './lib/episode-scanner.js'
 import { createPragueTime4AM } from './lib/timezone-utils.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-dotenv.config({ path: path.join(__dirname, '..', '.env.local') })
 
 // Environment variables
 const PODBEAN_CLIENT_ID = process.env.PODBEAN_CLIENT_ID
 const PODBEAN_CLIENT_SECRET = process.env.PODBEAN_CLIENT_SECRET
-const NOTION_API_KEY = process.env.NOTION_API_KEY
-const DATABASE_ID = process.env.NOTION_DATABASE_ID
-const NOTION_VERSION = '2022-06-28'
 
 // Configuration
-const EPISODES_PATH = '/Users/atti/Library/CloudStorage/GoogleDrive-xzsiros@gmail.com/Shared drives/Chlieb náš každodenný/EPIZÓDY'
 const PODBEAN_API_BASE = 'https://api.podbean.com/v1'
 
 // Validate environment variables
@@ -56,8 +49,10 @@ if (!PODBEAN_CLIENT_ID || !PODBEAN_CLIENT_SECRET) {
   process.exit(1)
 }
 
-if (!NOTION_API_KEY || !DATABASE_ID) {
-  console.error('❌ Error: NOTION_API_KEY and NOTION_DATABASE_ID must be set in .env.local')
+try {
+  notionConfig.validate()
+} catch (error) {
+  console.error(`❌ Error: ${error.message}`)
   process.exit(1)
 }
 
@@ -129,100 +124,6 @@ async function podbeanRequest(endpoint, options = {}) {
 }
 
 /**
- * Makes a request to Notion API
- */
-async function notionRequest(endpoint, options = {}) {
-  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
-    method: options.method || 'POST',
-    headers: {
-      Authorization: `Bearer ${NOTION_API_KEY}`,
-      'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Notion API error (${response.status}): ${errorText}`)
-  }
-
-  return response.json()
-}
-
-/**
- * Fetches episode data from Notion by date
- */
-async function getEpisodeFromNotion(date) {
-  try {
-    const response = await notionRequest(`/databases/${DATABASE_ID}/query`, {
-      body: {
-        filter: {
-          property: 'Date',
-          date: {
-            equals: date,
-          },
-        },
-      },
-    })
-
-    if (response.results.length === 0) {
-      return null
-    }
-
-    const page = response.results[0]
-    const titleProperty = page.properties.Title?.title || page.properties.title?.title
-    const title = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
-    
-    return {
-      pageId: page.id,
-      title: title,
-    }
-  } catch (error) {
-    console.error(`❌ Error fetching episode from Notion for date ${date}:`, error.message)
-    return null
-  }
-}
-
-/**
- * Updates the Spotify Embed URI field in Notion page
- */
-async function updateNotionEmbedUri(pageId, embedUri) {
-  try {
-    console.log('📝 Updating Notion with embed URI...')
-    
-    await notionRequest(`/pages/${pageId}`, {
-      method: 'PATCH',
-      body: {
-        properties: {
-          'Spotify Embed URI': {
-            url: embedUri,
-          },
-        },
-      },
-    })
-
-    console.log('✅ Notion page updated with embed URI')
-    return true
-  } catch (error) {
-    console.error('❌ Error updating Notion page:', error.message)
-    return false
-  }
-}
-
-/**
- * Extracts date from folder name (format: YYYYMMDD_episode_name)
- */
-function extractDateFromFolderName(folderName) {
-  const match = folderName.match(/^(\d{4})(\d{2})(\d{2})_/)
-  if (match) {
-    return `${match[1]}-${match[2]}-${match[3]}`
-  }
-  return null
-}
-
-/**
  * Checks if ffmpeg is installed
  */
 async function checkFFmpeg() {
@@ -270,93 +171,6 @@ async function convertWAVtoMP3(wavPath, mp3Path) {
       reject(err)
     })
   })
-}
-
-/**
- * Scans the episodes directory for episodes ready to upload
- */
-async function scanEpisodesDirectory(options = {}) {
-  try {
-    console.log('📂 Scanning episodes directory:', EPISODES_PATH)
-    
-    const entries = await fs.readdir(EPISODES_PATH, { withFileTypes: true })
-    const episodes = []
-
-    for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith('.')) {
-        continue
-      }
-
-      const episodePath = path.join(EPISODES_PATH, entry.name)
-      const finalPath = path.join(episodePath, 'FINAL')
-
-      // Check if FINAL folder exists
-      try {
-        await fs.access(finalPath)
-      } catch {
-        // No FINAL folder, skip this episode
-        continue
-      }
-
-      // Check for audio file in FINAL folder
-      const finalFiles = await fs.readdir(finalPath)
-      let audioFile = finalFiles.find(file => 
-        file.endsWith('.mp3') || 
-        file.endsWith('.m4a')
-      )
-
-      // If no MP3/M4A found, check for WAV and mark for conversion
-      let needsConversion = false
-      if (!audioFile) {
-        const wavFile = finalFiles.find(file => file.endsWith('.wav'))
-        if (wavFile) {
-          audioFile = wavFile
-          needsConversion = true
-        } else {
-          console.log(`⚠️  No audio file found in ${entry.name}/FINAL`)
-          console.log(`   Supported formats: MP3, M4A, WAV (will auto-convert)`)
-          continue
-        }
-      }
-
-      // Extract date from folder name
-      const date = extractDateFromFolderName(entry.name)
-      if (!date) {
-        console.log(`⚠️  Could not extract date from folder name: ${entry.name}`)
-        continue
-      }
-
-      // Apply date filters
-      if (options.startDate && date < options.startDate) {
-        continue
-      }
-      if (options.endDate && date > options.endDate) {
-        continue
-      }
-
-      const audioFilePath = path.join(finalPath, audioFile)
-      const stats = await fs.stat(audioFilePath)
-
-      episodes.push({
-        date,
-        folderName: entry.name,
-        audioFile: audioFile,
-        audioFilePath: audioFilePath,
-        fileSize: stats.size,
-        fileSizeMB: (stats.size / (1024 * 1024)).toFixed(2),
-        needsConversion: needsConversion,
-      })
-    }
-
-    // Sort by date
-    episodes.sort((a, b) => a.date.localeCompare(b.date))
-
-    console.log(`✅ Found ${episodes.length} episodes ready to upload`)
-    return episodes
-  } catch (error) {
-    console.error('❌ Error scanning episodes directory:', error.message)
-    throw error
-  }
 }
 
 /**
@@ -653,6 +467,7 @@ async function main() {
       dryRun: args.includes('--dry-run'),
       startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
       endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
+      year: args.includes('--year') ? args[args.indexOf('--year') + 1] : null,
       force: args.includes('--force'),
     }
     
