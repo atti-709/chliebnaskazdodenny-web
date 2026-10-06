@@ -1,90 +1,19 @@
 // Serverless API Route for Notion Integration
 // This handles Notion API calls server-side using direct HTTP requests
 // Using ES module format
+//
+// Devotionals live in one Notion database per year (see NOTION_DATABASE_IDS in
+// NOTION_SETUP.md). Single-date lookups go to that year's database; list
+// endpoints aggregate across all configured databases.
 
-const NOTION_VERSION = '2022-06-28'
-
-// Notion utilities
-const richTextToPlainText = richText => {
-  return richText ? richText.map(text => text.plain_text).join('') : ''
-}
-
-const extractDate = properties => {
-  const dateProperty = properties.Date?.date?.start || properties.date?.date?.start
-  return dateProperty ? dateProperty.split('T')[0] : ''
-}
-
-const extractTitle = properties => {
-  return richTextToPlainText(properties.Title?.title || properties.title?.title)
-}
-
-const extractQuote = properties => {
-  return richTextToPlainText(properties.Quote?.rich_text || properties.quote?.rich_text)
-}
-
-const extractSpotifyUri = properties => {
-  return properties['Spotify Embed URI']?.url || properties.spotifyEmbedUri?.url || ''
-}
-
-const extractQuestions = properties => {
-  return richTextToPlainText(properties.Questions?.rich_text || properties.questions?.rich_text)
-}
-
-const extractVerseDay = properties => {
-  return richTextToPlainText(properties.VerseDay?.rich_text || properties.verseDay?.rich_text)
-}
-
-const extractPrayer = properties => {
-  return richTextToPlainText(properties.Prayer?.rich_text || properties.prayer?.rich_text)
-}
-
-const extractVerseEvening = properties => {
-  return richTextToPlainText(
-    properties.VerseEvening?.rich_text || properties.verseEvening?.rich_text
-  )
-}
-
-const convertNotionPageToDevotional = (page, blocks) => {
-  const properties = page.properties
-
-  return {
-    id: page.id,
-    title: extractTitle(properties),
-    date: extractDate(properties),
-    quote: extractQuote(properties),
-    text: blocks,
-    spotifyEmbedUri: extractSpotifyUri(properties),
-    questions: extractQuestions(properties),
-    verseDay: extractVerseDay(properties),
-    prayer: extractPrayer(properties),
-    verseEvening: extractVerseEvening(properties),
-    createdAt: page.created_time,
-    updatedAt: page.last_edited_time,
-    url: page.url,
-  }
-}
-
-/**
- * Makes a request to Notion API using fetch
- */
-async function notionRequest(endpoint, apiKey, options = {}) {
-  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
-    method: options.method || 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (!response.ok) {
-    throw new Error(`Notion API error: ${response.statusText}`)
-  }
-
-  return response.json()
-}
+import {
+  convertNotionPageToDevotional,
+  fetchAllDates,
+  fetchLatestPages,
+  fetchPageBlocks,
+  findPageByDate,
+  getNotionDatabases,
+} from './_utils.js'
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -106,9 +35,17 @@ export default async function handler(req, res) {
 
   // Verify environment variables are set
   const NOTION_API_KEY = process.env.NOTION_API_KEY
-  const DATABASE_ID = process.env.NOTION_DATABASE_ID
+  let databases
 
-  if (!NOTION_API_KEY || !DATABASE_ID) {
+  try {
+    databases = getNotionDatabases()
+  } catch (error) {
+    console.error('Invalid Notion database configuration:', error.message)
+    res.status(500).json({ error: 'Server configuration error' })
+    return
+  }
+
+  if (!NOTION_API_KEY || databases.length === 0) {
     console.error('Missing required environment variables')
     res.status(500).json({ error: 'Server configuration error' })
     return
@@ -116,13 +53,8 @@ export default async function handler(req, res) {
 
   // Fetches blocks for a page and converts to devotional format
   const fetchAndConvertPage = async page => {
-    const blocksResponse = await notionRequest(
-      `/blocks/${page.id}/children`,
-      NOTION_API_KEY,
-      { method: 'GET' }
-    )
-
-    return convertNotionPageToDevotional(page, blocksResponse.results)
+    const blocks = await fetchPageBlocks(page.id, NOTION_API_KEY)
+    return convertNotionPageToDevotional(page, blocks)
   }
 
   try {
@@ -136,27 +68,15 @@ export default async function handler(req, res) {
         return
       }
 
-      const response = await notionRequest(
-        `/databases/${DATABASE_ID}/query`,
-        NOTION_API_KEY,
-        {
-          body: {
-            filter: {
-              property: 'Date',
-              date: {
-                equals: date,
-              },
-            },
-          },
-        }
-      )
+      // Queries the database for the date's year (null if that year has no database)
+      const page = await findPageByDate(databases, NOTION_API_KEY, date)
 
-      if (response.results.length === 0) {
+      if (!page) {
         res.status(404).json({ error: 'Devotional not found' })
         return
       }
 
-      const devotional = await fetchAndConvertPage(response.results[0])
+      const devotional = await fetchAndConvertPage(page)
 
       // Cache for 1 hour (devotionals don't change frequently)
       res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
@@ -174,24 +94,10 @@ export default async function handler(req, res) {
         return
       }
 
-      const response = await notionRequest(
-        `/databases/${DATABASE_ID}/query`,
-        NOTION_API_KEY,
-        {
-          body: {
-            sorts: [
-              {
-                property: 'Date',
-                direction: 'descending',
-              },
-            ],
-            page_size: limit,
-          },
-        }
-      )
+      const pages = await fetchLatestPages(databases, NOTION_API_KEY, limit)
 
       const devotionals = []
-      for (const page of response.results) {
+      for (const page of pages) {
         const devotional = await fetchAndConvertPage(page)
         devotionals.push(devotional)
       }
@@ -204,39 +110,7 @@ export default async function handler(req, res) {
 
     // Get available dates
     if (action === 'getDates') {
-      let allResults = []
-      let hasMore = true
-      let startCursor = undefined
-
-      // Fetch all pages with pagination
-      while (hasMore) {
-        const response = await notionRequest(
-          `/databases/${DATABASE_ID}/query`,
-          NOTION_API_KEY,
-          {
-            body: {
-              sorts: [
-                {
-                  property: 'Date',
-                  direction: 'descending',
-                },
-              ],
-              start_cursor: startCursor,
-            },
-          }
-        )
-
-        allResults = allResults.concat(response.results)
-        hasMore = response.has_more
-        startCursor = response.next_cursor
-      }
-
-      const dates = allResults
-        .map(page => {
-          const date = page.properties.Date?.date?.start || page.properties.date?.date?.start
-          return date ? date.split('T')[0] : null
-        })
-        .filter(Boolean)
+      const dates = await fetchAllDates(databases, NOTION_API_KEY)
 
       // Cache for 1 hour (dates don't change frequently)
       res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Vercel Cron Job: Sync Spotify Episode Embeds
  * 
@@ -14,11 +15,17 @@
  * - SPOTIFY_CLIENT_SECRET: Spotify API client secret
  * - SPOTIFY_SHOW_ID: Your podcast's Spotify show ID
  * - NOTION_API_KEY: Notion integration token
- * - NOTION_DATABASE_ID: Notion database ID
+ * - NOTION_DATABASE_IDS: Notion database per year, e.g. "2026:<id>,2027:<id>"
+ *   (legacy NOTION_DATABASE_ID with a single database is still supported)
  * - VERCEL_CRON_SECRET: (Optional) Secret for securing cron endpoint
  */
 
-const NOTION_VERSION = '2022-06-28'
+import {
+  getDatabaseIdForYear,
+  getNotionDatabases,
+  NOTION_VERSION,
+  queryDatabaseAll,
+} from './_utils.js'
 
 /**
  * Gets Spotify API access token using Client Credentials flow
@@ -78,49 +85,40 @@ async function getSpotifyEpisodes(accessToken, limit = 50) {
 }
 
 /**
- * Fetches all devotional pages from Notion
+ * Fetches devotional pages from the Notion databases covering the given years
+ * (one database per year, see NOTION_DATABASE_IDS)
+ * @param {Iterable<string|number>} years - Years of the Spotify episodes to match
  */
-async function getNotionPages() {
+async function getNotionPages(years) {
   const apiKey = process.env.NOTION_API_KEY
-  const databaseId = process.env.NOTION_DATABASE_ID
+  const databases = getNotionDatabases()
 
-  if (!apiKey || !databaseId) {
-    throw new Error('NOTION_API_KEY and NOTION_DATABASE_ID must be set')
+  if (!apiKey || databases.length === 0) {
+    throw new Error('NOTION_API_KEY and NOTION_DATABASE_IDS (or NOTION_DATABASE_ID) must be set')
+  }
+
+  const databaseIds = new Set()
+  for (const year of years) {
+    const databaseId = getDatabaseIdForYear(databases, year)
+    if (databaseId) {
+      databaseIds.add(databaseId)
+    } else {
+      console.log(`⚠️  No Notion database configured for year ${year}`)
+    }
   }
 
   let allPages = []
-  let hasMore = true
-  let startCursor = undefined
-
-  while (hasMore) {
-    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Notion-Version': NOTION_VERSION,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sorts: [
-          {
-            property: 'Date',
-            direction: 'descending',
-          },
-        ],
-        start_cursor: startCursor,
-        page_size: 100,
-      }),
+  for (const databaseId of databaseIds) {
+    const pages = await queryDatabaseAll(databaseId, apiKey, {
+      sorts: [
+        {
+          property: 'Date',
+          direction: 'descending',
+        },
+      ],
+      page_size: 100,
     })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Notion API error: ${error}`)
-    }
-
-    const data = await response.json()
-    allPages = allPages.concat(data.results)
-    hasMore = data.has_more
-    startCursor = data.next_cursor
+    allPages = allPages.concat(pages)
   }
 
   return allPages
@@ -258,8 +256,10 @@ export default async function handler(req, res) {
     const spotifyEpisodes = await getSpotifyEpisodes(spotifyToken)
     console.log(`📻 Found ${spotifyEpisodes.length} episodes on Spotify`)
 
-    // Fetch all pages from Notion
-    const notionPages = await getNotionPages()
+    // Fetch pages from the Notion database(s) for the episodes' years
+    const episodeYears = new Set(spotifyEpisodes.map(episode => episode.release_date?.slice(0, 4)))
+    episodeYears.delete(undefined)
+    const notionPages = await getNotionPages(episodeYears)
     console.log(`📚 Found ${notionPages.length} pages in Notion`)
 
     // Match and update
