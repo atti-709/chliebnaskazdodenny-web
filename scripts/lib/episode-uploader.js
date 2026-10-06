@@ -110,7 +110,7 @@ export async function uploadEpisode(episode, options = {}) {
     
     console.log(`📝 Title: ${notionEpisode.title}`)
     if (notionEpisode.episodeNumber) {
-      console.log(`📊 Episode Number: ${notionEpisode.episodeNumber}`)
+      console.log(`📊 Episode Number: ${notionEpisode.episodeNumber} (season ${notionEpisode.seasonNumber})`)
     }
     
     // Check if episode already exists on RSS.com
@@ -119,7 +119,7 @@ export async function uploadEpisode(episode, options = {}) {
         options.existingEpisodes,
         notionEpisode.title,
         episode.date,
-        { episodeNumber: notionEpisode.episodeNumber }
+        { episodeNumber: notionEpisode.episodeNumber, seasonNumber: notionEpisode.seasonNumber }
       )
       
       if (existingEpisode) {
@@ -171,7 +171,7 @@ export async function uploadEpisode(episode, options = {}) {
     // Prepare iTunes metadata
     const itunesOptions = {
       episodeNumber: notionEpisode.episodeNumber,
-      seasonNumber: 1, // Default season 1
+      seasonNumber: notionEpisode.seasonNumber, // One season per year
       explicit: false, // Not explicit content
       keywordIds: keywordIds, // RSS.com keyword IDs
     }

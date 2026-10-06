@@ -185,22 +185,25 @@ export async function getExistingEpisodes(limit = 1000) {
  * @param {string} date - Episode date (YYYY-MM-DD)
  * @param {Object} options - Additional match options
  * @param {number} [options.episodeNumber] - iTunes episode number (most reliable match)
+ * @param {number} [options.seasonNumber] - iTunes season; numbers restart every season, so the
+ *   number only matches an episode of the same season
  * @param {boolean} [options.debug] - Enable debug logging
  * @returns {Object|undefined} Found episode or undefined
  */
 export function findExistingEpisode(existingEpisodes, title, date, options = {}) {
   // Support legacy boolean signature: findExistingEpisode(eps, title, date, debug)
-  const { episodeNumber, debug } = typeof options === 'boolean'
-    ? { episodeNumber: undefined, debug: options }
+  const { episodeNumber, seasonNumber, debug } = typeof options === 'boolean'
+    ? { episodeNumber: undefined, seasonNumber: undefined, debug: options }
     : options
 
   // Match by episode number first (most reliable)
   if (episodeNumber != null) {
     const match = existingEpisodes.find(ep =>
-      ep.itunes_episode != null && Number(ep.itunes_episode) === Number(episodeNumber)
+      ep.itunes_episode != null && Number(ep.itunes_episode) === Number(episodeNumber) &&
+      (seasonNumber == null || Number(ep.itunes_season ?? 1) === Number(seasonNumber))
     )
     if (match) {
-      if (debug) console.log(`   Matched by episode number: #${episodeNumber}`)
+      if (debug) console.log(`   Matched by episode number: S${seasonNumber ?? '?'} #${episodeNumber}`)
       return match
     }
   }

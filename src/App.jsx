@@ -78,11 +78,12 @@ function App() {
     }
   }, [availableDates, currentDate])
 
-  // Compute episode number from available dates
+  // Compute episode number from available dates; numbering restarts every year (1 January = #1)
   const episodeNumber = useMemo(() => {
     if (availableDates.size === 0) return null
-    const sortedDates = [...availableDates].sort()
     const currentDateStr = format(currentDate, 'yyyy-MM-dd')
+    const year = currentDateStr.slice(0, 4)
+    const sortedDates = [...availableDates].filter(date => date.startsWith(year)).sort()
     const index = sortedDates.indexOf(currentDateStr)
     return index >= 0 ? index + 1 : null
   }, [availableDates, currentDate])

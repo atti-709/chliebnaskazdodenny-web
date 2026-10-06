@@ -60,8 +60,8 @@ pairs (spaces around entries are ignored). How it is used:
   year (a year without a database simply shows "not found"); the list of available dates
   and `getAll` are merged from all databases.
 - **Scripts** (`scripts/`): each episode/devotional uses the database of its date's year.
-  Episode numbers continue across years (the first 2027 episode follows the last 2026
-  one), so **keep every past year in the list**.
+  Episode numbers restart every year (1 January is #1), and every year is its own iTunes
+  season on RSS.com (2026 = season 1, 2027 = season 2, ...).
 
 **Legacy:** a single `NOTION_DATABASE_ID=...` still works and is then used for every year.
 It is ignored as soon as `NOTION_DATABASE_IDS` is set.

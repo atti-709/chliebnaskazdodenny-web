@@ -113,8 +113,8 @@ export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
 
     // Calculate episode number if requested
     if (includeEpisodeNumber) {
-      const episodeNumber = await getEpisodeNumber(date)
-      result.episodeNumber = episodeNumber
+      result.episodeNumber = await getEpisodeNumber(date)
+      result.seasonNumber = getSeasonNumber(date)
     }
 
     return result
@@ -125,10 +125,22 @@ export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
 }
 
 /**
+ * First year of the podcast; it is iTunes season 1 and every later year is the next season
+ */
+const FIRST_SEASON_YEAR = 2026
+
+/**
+ * Returns the iTunes season of an episode: one season per year (2026 = 1, 2027 = 2, ...)
+ * @param {string} date - Episode date (YYYY-MM-DD)
+ * @returns {number} Season number (1-based)
+ */
+export function getSeasonNumber(date) {
+  return Number(date.slice(0, 4)) - FIRST_SEASON_YEAR + 1
+}
+
+/**
  * Calculates the episode number based on date ordering in Notion.
- * Numbering is continuous across all configured yearly databases
- * (e.g. the first 2027 episode follows the last 2026 episode), so every
- * earlier year must stay listed in NOTION_DATABASE_IDS.
+ * Numbering restarts every year: the first episode of a year (1 January) is #1.
  * @param {string} targetDate - Episode date (YYYY-MM-DD)
  * @returns {Promise<number|null>} Episode number (1-based), or null if it cannot be determined
  */
@@ -141,16 +153,17 @@ async function getEpisodeNumber(targetDate) {
       },
     ]
 
-    // Fetch all episode dates from every yearly database
-    const allDates = []
-    for (const database of notionConfig.databases) {
-      const pages = await queryDatabaseAll(database.id, { sorts })
-      allDates.push(...pages.map(getPageDate).filter(Boolean))
-    }
-    allDates.sort()
+    // Fetch the episode dates of the target year (a legacy database may hold several years)
+    const year = targetDate.slice(0, 4)
+    const databaseId = notionConfig.requireDatabaseIdForYear(year)
+    const pages = await queryDatabaseAll(databaseId, { sorts })
+    const yearDates = pages
+      .map(getPageDate)
+      .filter(date => date?.startsWith(year))
+      .sort()
 
     // Episode number is index + 1 (1-based)
-    const episodeIndex = allDates.indexOf(targetDate)
+    const episodeIndex = yearDates.indexOf(targetDate)
     if (episodeIndex < 0) {
       console.error(`❌ Could not find ${targetDate} when calculating episode number`)
       return null
