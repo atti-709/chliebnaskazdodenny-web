@@ -17,7 +17,7 @@ The `update-rss-episodes.mjs` script allows you to update existing episodes on R
    RSS_API_KEY=your_api_key
    RSS_PODCAST_ID=your_podcast_id
    NOTION_API_KEY=your_notion_token
-   NOTION_DATABASE_ID=your_database_id
+   NOTION_DATABASE_IDS=2026:your_2026_database_id,2027:your_2027_database_id
    ```
 
 2. **ffmpeg** (required for WAV to MP3 conversion):

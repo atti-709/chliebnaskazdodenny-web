@@ -23,7 +23,7 @@
  *   RSS_API_KEY             - RSS.com API key
  *   RSS_PODCAST_ID          - RSS.com podcast/channel ID
  *   NOTION_API_KEY          - Notion integration token
- *   NOTION_DATABASE_ID      - Notion database ID for episodes
+ *   NOTION_DATABASE_IDS     - Notion database per year, e.g. "2026:<id>,2027:<id>"
  */
 
 import { validateAllConfig } from './lib/config.js'
@@ -147,8 +147,8 @@ async function syncPlayerUrls(options) {
       }
       console.log(`   Player URL: ${playerUrl}`)
       
-      // Fetch corresponding Notion episode by title
-      const notionEpisode = await getEpisodeFromNotionByTitle(episodeTitle)
+      // Fetch corresponding Notion episode by title (date picks the year's database first)
+      const notionEpisode = await getEpisodeFromNotionByTitle(episodeTitle, date)
       
       if (!notionEpisode) {
         console.log(`   ⚠️  Not found in Notion (searching by title) - skipping`)

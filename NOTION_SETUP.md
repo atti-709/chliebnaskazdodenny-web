@@ -13,6 +13,10 @@ This application now uses Notion as the backend instead of Strapi. Follow these 
 
 ## 2. Create a Notion Database
 
+Devotionals are stored in **one database per year** (e.g. "Epizódy 2026", "Epizódy 2027"),
+all with the same schema. See [Yearly Rollover](#9-yearly-rollover-new-years-database) for
+adding the next year.
+
 Create a database in Notion with the following properties:
 
 - **Title** (Title) - The devotional title
@@ -46,8 +50,21 @@ Create a `.env.local` file in the project root with:
 
 ```
 NOTION_API_KEY=your_notion_api_key_here
-NOTION_DATABASE_ID=your_notion_database_id_here
+NOTION_DATABASE_IDS=2026:your_2026_database_id,2027:your_2027_database_id
 ```
+
+`NOTION_DATABASE_IDS` maps each year to its database as comma-separated `YEAR:DATABASE_ID`
+pairs (spaces around entries are ignored). How it is used:
+
+- **Website** (`api/devotionals.js`): a single day is read from the database of that day's
+  year (a year without a database simply shows "not found"); the list of available dates
+  and `getAll` are merged from all databases.
+- **Scripts** (`scripts/`): each episode/devotional uses the database of its date's year.
+  Episode numbers continue across years (the first 2027 episode follows the last 2026
+  one), so **keep every past year in the list**.
+
+**Legacy:** a single `NOTION_DATABASE_ID=...` still works and is then used for every year.
+It is ignored as soon as `NOTION_DATABASE_IDS` is set.
 
 **Important for Deployment:**
 
@@ -102,3 +119,30 @@ If you're migrating from Strapi, you'll need to:
 2. Create corresponding pages in your Notion database
 3. Copy the content from Strapi's rich text format to Notion's block format
 4. Update the environment variables as described above
+
+## 9. Yearly Rollover (New Year's Database)
+
+Before the first episode of a new year (example: 2028):
+
+1. **Create the database** – in Notion, duplicate last year's "Epizódy" database without
+   its content (or create a new one) so that it has exactly the same properties as in
+   [Database Schema](#6-database-schema). Check it with
+   `node scripts/discover-schema.mjs` (prints every configured database).
+2. **Share it with the integration** – Share → Invite → your integration (see step 3).
+   Until it is shared, the website skips that year and logs an error.
+3. **Copy its database ID** (see step 4).
+4. **Add the year to `NOTION_DATABASE_IDS`** – append `,2028:<new database id>` and keep all
+   previous years:
+   - **Netlify**: Site configuration → Environment variables → `NOTION_DATABASE_IDS` →
+     edit the value, then trigger a redeploy (Deploys → Trigger deploy) so the functions pick it up.
+   - **Local**: update `NOTION_DATABASE_IDS` in `.env.local` (used by `npm run dev` and all
+     scripts).
+5. **Put the audio in `EPIZÓDY/2028/`** on the shared drive
+   (`EPIZÓDY/2028/20280101_slug/{SRC,FINAL}`). The upload scripts scan all year folders, or
+   only one with `--year 2028`.
+6. **Upload the devotionals** – `node scripts/upload-to-notion.mjs devotionals-2028.json --dry-run`
+   shows which database each devotional goes to; it refuses to start if a year has no
+   database configured.
+
+The website needs no code change: dates from the new database appear in the date picker
+automatically.

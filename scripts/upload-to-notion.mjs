@@ -1,19 +1,36 @@
+/**
+ * Notion Devotional Uploader
+ *
+ * Usage:
+ *   node scripts/upload-to-notion.mjs [file.json] [options]
+ *
+ * Options:
+ *   --dry-run          Show a sample and the target database(s) without uploading
+ *   --year YYYY        Upload every devotional into that year's database
+ *                      (default: each devotional goes to the database of its date's year)
+ *   --force            Archive an existing page for the same date and re-create it
+ *   --stop-on-error    Stop at the first failed devotional
+ *   --start N          Index of the first devotional to upload
+ *   --end N            Index after the last devotional to upload
+ *
+ * Databases come from NOTION_DATABASE_IDS ("2026:<id>,2027:<id>") in .env.local.
+ */
+
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import dotenv from 'dotenv'
+import { notionConfig } from './lib/config.js' // also loads .env.local
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-dotenv.config({ path: path.join(__dirname, '..', '.env.local') })
+const NOTION_API_KEY = notionConfig.apiKey
+const NOTION_VERSION = notionConfig.version
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY
-const DATABASE_ID = process.env.NOTION_DATABASE_ID
-const NOTION_VERSION = '2022-06-28'
-
-if (!NOTION_API_KEY || !DATABASE_ID) {
-  console.error('Error: NOTION_API_KEY and NOTION_DATABASE_ID must be set in .env.local')
+try {
+  notionConfig.validate()
+} catch (error) {
+  console.error(`Error: ${error.message}`)
   process.exit(1)
 }
 
@@ -254,11 +271,19 @@ function contentToBlocks(content) {
 }
 
 /**
+ * Returns the database a devotional belongs to: the --year database when given,
+ * otherwise the database for the devotional's date year
+ */
+function resolveDatabaseId(devotional, options = {}) {
+  return notionConfig.requireDatabaseIdForYear(options.year ?? String(devotional.date).slice(0, 4))
+}
+
+/**
  * Checks if a devotional page already exists for a given date
  */
-async function checkExistingPage(date) {
+async function checkExistingPage(databaseId, date) {
   try {
-    const data = await notionRequest(`/databases/${DATABASE_ID}/query`, {
+    const data = await notionRequest(`/databases/${databaseId}/query`, {
       body: {
         filter: {
           property: 'Date',
@@ -302,8 +327,10 @@ async function createDevotionalPage(devotional, options = {}) {
   try {
     console.log(`📝 Creating page for ${devotional.date}: ${devotional.title}`)
     
+    const databaseId = resolveDatabaseId(devotional, options)
+    
     // Check if page already exists
-    const existingPage = await checkExistingPage(devotional.date)
+    const existingPage = await checkExistingPage(databaseId, devotional.date)
     
     if (existingPage) {
       if (options.force) {
@@ -378,7 +405,7 @@ async function createDevotionalPage(devotional, options = {}) {
     
     const response = await notionRequest('/pages', {
       body: {
-        parent: { database_id: DATABASE_ID },
+        parent: { database_id: databaseId },
         properties,
         children
       }
@@ -417,6 +444,31 @@ async function uploadDevotionals(jsonFile, options = {}) {
     const devotionals = JSON.parse(content)
     
     console.log(`📊 Found ${devotionals.length} devotionals to upload`)
+    
+    // Make sure every devotional has a target database before uploading anything
+    const yearCounts = new Map()
+    for (const devotional of devotionals) {
+      const year = String(devotional.date).slice(0, 4)
+      yearCounts.set(year, (yearCounts.get(year) || 0) + 1)
+    }
+    if (options.year) {
+      const otherYears = [...yearCounts.keys()].filter(year => year !== options.year)
+      if (otherYears.length > 0) {
+        console.warn(`⚠️  --year ${options.year}: file also contains dates from ${otherYears.join(', ')}`)
+      }
+    }
+    const targetYears = options.year ? [options.year] : [...yearCounts.keys()].sort()
+    const missingYears = targetYears.filter(year => !notionConfig.getDatabaseIdForYear(year))
+    if (missingYears.length > 0) {
+      throw new Error(
+        `No Notion database configured for year(s) ${missingYears.join(', ')}. ` +
+          'Add them to NOTION_DATABASE_IDS in .env.local'
+      )
+    }
+    for (const year of targetYears) {
+      const count = options.year ? devotionals.length : yearCounts.get(year)
+      console.log(`🗂️  ${year}: ${count} devotional(s) → database ${notionConfig.getDatabaseIdForYear(year)}`)
+    }
     
     if (options.dryRun) {
       console.log('🏃 DRY RUN MODE - No pages will be created')
@@ -474,10 +526,16 @@ const jsonFile = args[0] || 'devotionals-2026.json'
 
 const options = {
   dryRun: args.includes('--dry-run'),
+  year: args.includes('--year') ? args[args.indexOf('--year') + 1] : undefined,
   stopOnError: args.includes('--stop-on-error'),
   force: args.includes('--force'),
   start: args.includes('--start') ? parseInt(args[args.indexOf('--start') + 1]) : 0,
   end: args.includes('--end') ? parseInt(args[args.indexOf('--end') + 1]) : undefined
+}
+
+if (options.year !== undefined && !/^\d{4}$/.test(options.year)) {
+  console.error(`Error: invalid --year "${options.year}" (expected YYYY)`)
+  process.exit(1)
 }
 
 console.log('🚀 Notion Devotional Uploader\n')

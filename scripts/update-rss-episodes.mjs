@@ -17,6 +17,7 @@
  *   --dry-run           Show what would be updated without actually updating
  *   --start-date        Start date (YYYY-MM-DD) for episodes to update
  *   --end-date          End date (YYYY-MM-DD) for episodes to update
+ *   --year              Only scan EPIZÓDY/<YYYY>/ (default: all year folders)
  *   --description-only  Update only the description (no audio upload)
  *   --audio-only        Update only the audio file (no description change)
  *   --update-schedule   Update the schedule_datetime to 4 AM Prague time
@@ -26,7 +27,7 @@
  *   RSS_API_KEY             - RSS.com API key
  *   RSS_PODCAST_ID          - RSS.com podcast/channel ID
  *   NOTION_API_KEY          - Notion integration token
- *   NOTION_DATABASE_ID      - Notion database ID for episodes
+ *   NOTION_DATABASE_IDS     - Notion database per year, e.g. "2026:<id>,2027:<id>"
  */
 
 import fs from 'fs/promises'
@@ -48,6 +49,7 @@ function parseArgs() {
     dryRun: args.includes('--dry-run'),
     startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
     endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
+    year: args.includes('--year') ? args[args.indexOf('--year') + 1] : null,
     descriptionOnly: args.includes('--description-only'),
     audioOnly: args.includes('--audio-only'),
     updateSchedule: args.includes('--update-schedule'),

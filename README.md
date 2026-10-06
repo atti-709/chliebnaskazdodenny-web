@@ -38,7 +38,8 @@ npm install
 ```bash
 # Create .env.local file
 NOTION_API_KEY=your_notion_api_key_here
-NOTION_DATABASE_ID=your_notion_database_id_here
+# One Notion database per year (YEAR:DATABASE_ID, comma-separated)
+NOTION_DATABASE_IDS=2026:your_2026_database_id,2027:your_2027_database_id
 ```
 
 3. Start the development server:
@@ -101,7 +102,7 @@ The application uses Notion as a backend database. Follow the detailed setup gui
 
 1. **Set up Notion** (see [NOTION_SETUP.md](./NOTION_SETUP.md))
    - Create a Notion integration
-   - Create a database with the required properties
+   - Create a database with the required properties (one database per year)
    - Share the database with your integration
 
 2. **Configure the app**:
@@ -110,7 +111,7 @@ The application uses Notion as a backend database. Follow the detailed setup gui
 
    ```env
    NOTION_API_KEY=your_notion_api_key_here
-   NOTION_DATABASE_ID=your_notion_database_id_here
+   NOTION_DATABASE_IDS=2026:your_2026_database_id,2027:your_2027_database_id
    
    # Optional: For RSS.com upload automation
    RSS_CLIENT_ID=your_rss_client_id
@@ -121,6 +122,13 @@ The application uses Notion as a backend database. Follow the detailed setup gui
    ```bash
    npm run dev
    ```
+
+### New Year
+
+Each year has its own Notion database. To add a year: create the database with the same
+schema, share it with the integration, append `,YEAR:<id>` to `NOTION_DATABASE_IDS` in
+Netlify (then redeploy) and in `.env.local`, and put the audio in `EPIZÓDY/<YEAR>/`.
+See [NOTION_SETUP.md → Yearly Rollover](./NOTION_SETUP.md#9-yearly-rollover-new-years-database).
 
 The app will now fetch devotionals from your Notion database!
 
@@ -195,8 +203,12 @@ Options:
   --dry-run          Show what would be uploaded without uploading
   --start-date       Start date (YYYY-MM-DD) for episodes to upload
   --end-date         End date (YYYY-MM-DD) for episodes to upload
+  --year             Only scan EPIZÓDY/<YYYY>/ (default: all year folders)
   --force            Upload even if episode already exists
 ```
+
+Episode audio is read from `EPIZÓDY/<YYYY>/<YYYYMMDD_slug>/FINAL/` on the shared drive, and
+each episode's title comes from the Notion database for its year.
 
 ### RSS.com Player URL Sync
 

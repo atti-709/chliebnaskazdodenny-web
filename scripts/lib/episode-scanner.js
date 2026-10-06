@@ -22,27 +22,98 @@ export function extractDateFromFolderName(folderName) {
   return null
 }
 
+const YEAR_PATTERN = /^\d{4}$/
+
 /**
- * Scans the episodes directory for episodes ready to upload
- * @param {Object} options - Scanning options
- * @param {string} options.startDate - Optional start date filter (YYYY-MM-DD)
- * @param {string} options.endDate - Optional end date filter (YYYY-MM-DD)
- * @returns {Promise<Array>} Array of episode objects
+ * Lists episode folders, which are grouped by year:
+ *   EPIZÓDY/<YYYY>/<YYYYMMDD_slug>
+ * Year folders entirely outside the requested year / date range are not read.
+ * @param {Object} options - Listing options
+ * @param {string|number} [options.year] - Only list this year's folder (YYYY)
+ * @param {string} [options.startDate] - Skip years before this date's year (YYYY-MM-DD)
+ * @param {string} [options.endDate] - Skip years after this date's year (YYYY-MM-DD)
+ * @returns {Promise<Array<{name: string, path: string, date: string|null}>>}
+ *   Episode folders sorted by year folder, `date` parsed from the folder name
  */
-export async function scanEpisodesDirectory(options = {}) {
-  try {
-    console.log('📂 Scanning episodes directory:', episodesConfig.path)
-    
-    const entries = await fs.readdir(episodesConfig.path, { withFileTypes: true })
-    const episodes = []
+export async function listEpisodeFolders(options = {}) {
+  const year = options.year != null ? String(options.year) : null
+  if (year && !YEAR_PATTERN.test(year)) {
+    throw new Error(`Invalid year "${options.year}" (expected YYYY)`)
+  }
+
+  const rootEntries = await fs.readdir(episodesConfig.path, { withFileTypes: true })
+
+  // Episode folders left in the old flat layout (EPIZÓDY/<YYYYMMDD_slug>) are ignored
+  const flatFolders = rootEntries.filter(
+    entry => entry.isDirectory() && extractDateFromFolderName(entry.name)
+  )
+  if (flatFolders.length > 0) {
+    console.log(
+      `⚠️  Ignoring ${flatFolders.length} episode folder(s) directly in EPIZÓDY - move them into EPIZÓDY/<YYYY>/`
+    )
+  }
+
+  const yearFolders = rootEntries
+    .filter(entry => entry.isDirectory() && YEAR_PATTERN.test(entry.name))
+    .map(entry => entry.name)
+    .filter(name => !year || name === year)
+    .filter(name => !options.startDate || name >= options.startDate.slice(0, 4))
+    .filter(name => !options.endDate || name <= options.endDate.slice(0, 4))
+    .sort()
+
+  if (year && yearFolders.length === 0) {
+    console.log(`⚠️  Year folder not found: ${episodesConfig.yearPath(year)}`)
+  }
+
+  const folders = []
+  for (const yearFolder of yearFolders) {
+    const yearPath = episodesConfig.yearPath(yearFolder)
+    const entries = await fs.readdir(yearPath, { withFileTypes: true })
 
     for (const entry of entries) {
       if (!entry.isDirectory() || entry.name.startsWith('.')) {
         continue
       }
 
-      const episodePath = path.join(episodesConfig.path, entry.name)
-      const finalPath = path.join(episodePath, 'FINAL')
+      folders.push({
+        name: entry.name,
+        path: path.join(yearPath, entry.name),
+        date: extractDateFromFolderName(entry.name),
+      })
+    }
+  }
+
+  return folders
+}
+
+/**
+ * Scans the episodes directory for episodes ready to upload
+ * @param {Object} options - Scanning options
+ * @param {string|number} options.year - Optional year (YYYY); scans all years if omitted
+ * @param {string} options.startDate - Optional start date filter (YYYY-MM-DD)
+ * @param {string} options.endDate - Optional end date filter (YYYY-MM-DD)
+ * @returns {Promise<Array>} Array of episode objects
+ */
+export async function scanEpisodesDirectory(options = {}) {
+  try {
+    console.log(
+      '📂 Scanning episodes directory:',
+      options.year ? episodesConfig.yearPath(options.year) : `${episodesConfig.path}/<YYYY>`
+    )
+
+    const folders = await listEpisodeFolders(options)
+    const episodes = []
+
+    for (const folder of folders) {
+      // Apply date filters early to avoid reading folders outside the range
+      if (folder.date && options.startDate && folder.date < options.startDate) {
+        continue
+      }
+      if (folder.date && options.endDate && folder.date > options.endDate) {
+        continue
+      }
+
+      const finalPath = path.join(folder.path, 'FINAL')
 
       // Check if FINAL folder exists
       try {
@@ -67,24 +138,16 @@ export async function scanEpisodesDirectory(options = {}) {
           audioFile = wavFile
           needsConversion = true
         } else {
-          console.log(`⚠️  No audio file found in ${entry.name}/FINAL`)
+          console.log(`⚠️  No audio file found in ${folder.name}/FINAL`)
           console.log(`   Supported formats: MP3, M4A, WAV (will auto-convert)`)
           continue
         }
       }
 
-      // Extract date from folder name
-      const date = extractDateFromFolderName(entry.name)
+      // Date comes from the folder name
+      const date = folder.date
       if (!date) {
-        console.log(`⚠️  Could not extract date from folder name: ${entry.name}`)
-        continue
-      }
-
-      // Apply date filters
-      if (options.startDate && date < options.startDate) {
-        continue
-      }
-      if (options.endDate && date > options.endDate) {
+        console.log(`⚠️  Could not extract date from folder name: ${folder.name}`)
         continue
       }
 
@@ -93,7 +156,7 @@ export async function scanEpisodesDirectory(options = {}) {
 
       episodes.push({
         date,
-        folderName: entry.name,
+        folderName: folder.name,
         audioFile: audioFile,
         audioFilePath: audioFilePath,
         fileSize: stats.size,

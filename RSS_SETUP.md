@@ -26,7 +26,8 @@ Your `.env.local` file should now look like this:
 ```env
 # Notion API Credentials
 NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# One Notion database per year (YEAR:DATABASE_ID, comma-separated)
+NOTION_DATABASE_IDS=2026:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2027:yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 
 # RSS.com API Credentials
 RSS_CLIENT_ID=your_client_id_here
@@ -87,7 +88,7 @@ npm run rss:upload-skip
 **Solution**: 
 - Verify the episode exists in Notion for that date
 - Check the Date property in Notion matches the format YYYY-MM-DD
-- Make sure your NOTION_API_KEY and NOTION_DATABASE_ID are correct
+- Make sure your NOTION_API_KEY is correct and NOTION_DATABASE_IDS has a database for the episode's year
 
 ## Next Steps
 

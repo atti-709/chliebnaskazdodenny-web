@@ -133,13 +133,17 @@ export const rssConfig = {
 
 export const notionConfig = {
   apiKey: string,
-  databaseId: string,
   version: string,
+  databases: Array<{ year: number | null, id: string }>, // from NOTION_DATABASE_IDS
+  getDatabaseIdForYear(year): string | null,
+  getDatabaseIdForDate(date): string | null,
+  requireDatabaseIdForYear(year): string, // throws if the year is not configured
   validate(): void
 }
 
 export const episodesConfig = {
-  path: string
+  path: string, // EPIZÓDY root; episodes live in EPIZÓDY/<YYYY>/<YYYYMMDD_slug>
+  yearPath(year): string
 }
 
 export function validateAllConfig(): void
@@ -265,7 +269,7 @@ Each module handles errors at its level:
   ├─→ RSS_API_KEY
   ├─→ RSS_PODCAST_ID
   ├─→ NOTION_API_KEY
-  └─→ NOTION_DATABASE_ID
+  └─→ NOTION_DATABASE_IDS (YEAR:ID pairs, one database per year)
       │
       ▼
   lib/config.js (Configuration Objects)

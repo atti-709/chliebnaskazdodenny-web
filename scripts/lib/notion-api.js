@@ -34,14 +34,62 @@ async function notionRequest(endpoint, options = {}) {
 }
 
 /**
- * Fetches episode data from Notion by date
+ * Extracts the date (YYYY-MM-DD) from a Notion page
+ * @param {Object} page - Notion page
+ * @returns {string|null} Date or null
+ */
+function getPageDate(page) {
+  const dateProperty = page.properties.Date?.date?.start || page.properties.date?.date?.start
+  return dateProperty ? dateProperty.split('T')[0] : null
+}
+
+/**
+ * Extracts the title from a Notion page
+ * @param {Object} page - Notion page
+ * @returns {string} Title
+ */
+function getPageTitle(page) {
+  const titleProperty = page.properties.Title?.title || page.properties.title?.title
+  return titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
+}
+
+/**
+ * Queries a database, following pagination until all results are fetched
+ * @param {string} databaseId - Notion database ID
+ * @param {Object} body - Query body (filter, sorts)
+ * @returns {Promise<Array>} All matching pages
+ */
+async function queryDatabaseAll(databaseId, body = {}) {
+  let allResults = []
+  let hasMore = true
+  let startCursor = undefined
+
+  while (hasMore) {
+    const requestBody = { page_size: 100, ...body }
+    if (startCursor) {
+      requestBody.start_cursor = startCursor
+    }
+
+    const response = await notionRequest(`/databases/${databaseId}/query`, { body: requestBody })
+    allResults = allResults.concat(response.results)
+    hasMore = response.has_more
+    startCursor = response.next_cursor
+  }
+
+  return allResults
+}
+
+/**
+ * Fetches episode data from Notion by date (from the database of the date's year)
  * @param {string} date - Episode date (YYYY-MM-DD)
  * @param {boolean} includeEpisodeNumber - Whether to calculate episode number
  * @returns {Promise<Object|null>} Episode data or null if not found
  */
 export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
   try {
-    const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, {
+    const databaseId = notionConfig.requireDatabaseIdForYear(date.slice(0, 4))
+
+    const response = await notionRequest(`/databases/${databaseId}/query`, {
       body: {
         filter: {
           property: 'Date',
@@ -57,20 +105,18 @@ export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
     }
 
     const page = response.results[0]
-    const titleProperty = page.properties.Title?.title || page.properties.title?.title
-    const title = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
-    
+
     const result = {
       pageId: page.id,
-      title: title,
+      title: getPageTitle(page),
     }
-    
+
     // Calculate episode number if requested
     if (includeEpisodeNumber) {
       const episodeNumber = await getEpisodeNumber(date)
       result.episodeNumber = episodeNumber
     }
-    
+
     return result
   } catch (error) {
     console.error(`❌ Error fetching episode from Notion for date ${date}:`, error.message)
@@ -79,86 +125,88 @@ export async function getEpisodeFromNotion(date, includeEpisodeNumber = false) {
 }
 
 /**
- * Calculates the episode number based on date ordering in Notion
+ * Calculates the episode number based on date ordering in Notion.
+ * Numbering is continuous across all configured yearly databases
+ * (e.g. the first 2027 episode follows the last 2026 episode), so every
+ * earlier year must stay listed in NOTION_DATABASE_IDS.
  * @param {string} targetDate - Episode date (YYYY-MM-DD)
- * @returns {Promise<number>} Episode number (1-based)
+ * @returns {Promise<number|null>} Episode number (1-based), or null if it cannot be determined
  */
 async function getEpisodeNumber(targetDate) {
   try {
-    // Fetch all episodes sorted by date ascending, paginating through all results
-    let allResults = []
-    let hasMore = true
-    let startCursor = undefined
+    const sorts = [
+      {
+        property: 'Date',
+        direction: 'ascending',
+      },
+    ]
 
-    while (hasMore) {
-      const body = {
-        sorts: [
-          {
-            property: 'Date',
-            direction: 'ascending',
-          },
-        ],
-        page_size: 100,
-      }
-      if (startCursor) {
-        body.start_cursor = startCursor
-      }
-
-      const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, { body })
-      allResults = allResults.concat(response.results)
-      hasMore = response.has_more
-      startCursor = response.next_cursor
+    // Fetch all episode dates from every yearly database
+    const allDates = []
+    for (const database of notionConfig.databases) {
+      const pages = await queryDatabaseAll(database.id, { sorts })
+      allDates.push(...pages.map(getPageDate).filter(Boolean))
     }
-
-    // Find the position of the target date
-    const episodeIndex = allResults.findIndex(page => {
-      const dateProperty = page.properties.Date?.date?.start || page.properties.date?.date?.start
-      return dateProperty && dateProperty.split('T')[0] === targetDate
-    })
+    allDates.sort()
 
     // Episode number is index + 1 (1-based)
-    return episodeIndex >= 0 ? episodeIndex + 1 : 1
+    const episodeIndex = allDates.indexOf(targetDate)
+    if (episodeIndex < 0) {
+      console.error(`❌ Could not find ${targetDate} when calculating episode number`)
+      return null
+    }
+    return episodeIndex + 1
   } catch (error) {
     console.error('❌ Error calculating episode number:', error.message)
-    return 1 // Default to 1 if calculation fails
+    return null // Unknown number: never guess, it is used to match existing episodes
   }
 }
 
 /**
- * Fetches episode data from Notion by title
+ * Fetches episode data from Notion by title.
+ * Searches the database for `dateHint`'s year first (when given), then the
+ * remaining databases from the newest year to the oldest.
  * @param {string} title - Episode title
+ * @param {string|null} [dateHint] - Expected episode date (YYYY-MM-DD), if known
  * @returns {Promise<Object|null>} Episode data or null if not found
  */
-export async function getEpisodeFromNotionByTitle(title) {
+export async function getEpisodeFromNotionByTitle(title, dateHint = null) {
   try {
-    const response = await notionRequest(`/databases/${notionConfig.databaseId}/query`, {
-      body: {
-        filter: {
-          property: 'Title',
-          title: {
-            equals: title,
+    const preferredId = dateHint ? notionConfig.getDatabaseIdForDate(dateHint) : null
+    const databaseIds = [
+      ...new Set([preferredId, ...notionConfig.databases.map(db => db.id).reverse()]),
+    ].filter(Boolean)
+
+    for (const databaseId of databaseIds) {
+      const response = await notionRequest(`/databases/${databaseId}/query`, {
+        body: {
+          filter: {
+            property: 'Title',
+            title: {
+              equals: title,
+            },
           },
         },
-      },
-    })
+      })
 
-    if (response.results.length === 0) {
-      return null
+      if (response.results.length === 0) {
+        continue
+      }
+
+      const page = response.results[0]
+
+      // Also get the date for display purposes
+      const dateProperty = page.properties.Date?.date
+      const date = dateProperty ? dateProperty.start : null
+
+      return {
+        pageId: page.id,
+        title: getPageTitle(page),
+        date: date,
+      }
     }
 
-    const page = response.results[0]
-    const titleProperty = page.properties.Title?.title || page.properties.title?.title
-    const pageTitle = titleProperty ? titleProperty.map(text => text.plain_text).join('') : ''
-    
-    // Also get the date for display purposes
-    const dateProperty = page.properties.Date?.date
-    const date = dateProperty ? dateProperty.start : null
-    
-    return {
-      pageId: page.id,
-      title: pageTitle,
-      date: date,
-    }
+    return null
   } catch (error) {
     console.error(`❌ Error fetching episode from Notion by title "${title}":`, error.message)
     return null

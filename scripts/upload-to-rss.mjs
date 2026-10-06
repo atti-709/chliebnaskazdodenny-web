@@ -14,13 +14,14 @@
  *   --dry-run          Show what would be uploaded without actually uploading
  *   --start-date       Start date (YYYY-MM-DD) for episodes to upload
  *   --end-date         End date (YYYY-MM-DD) for episodes to upload
+ *   --year             Only scan EPIZÓDY/<YYYY>/ (default: all year folders)
  *   --force            Upload even if episode already exists (deletes and re-uploads)
  * 
  * Environment Variables (add to .env.local):
  *   RSS_API_KEY             - RSS.com API key
  *   RSS_PODCAST_ID          - RSS.com podcast/channel ID
  *   NOTION_API_KEY          - Notion integration token
- *   NOTION_DATABASE_ID      - Notion database ID for episodes
+ *   NOTION_DATABASE_IDS     - Notion database per year, e.g. "2026:<id>,2027:<id>"
  */
 
 import { validateAllConfig } from './lib/config.js'
@@ -40,6 +41,7 @@ function parseArgs() {
     dryRun: args.includes('--dry-run'),
     startDate: args.includes('--start-date') ? args[args.indexOf('--start-date') + 1] : null,
     endDate: args.includes('--end-date') ? args[args.indexOf('--end-date') + 1] : null,
+    year: args.includes('--year') ? args[args.indexOf('--year') + 1] : null,
     force: args.includes('--force'),
   }
 }

@@ -7,46 +7,27 @@
 
 import dotenv from 'dotenv'
 import { convertNotionPageToDevotional } from './src/utils/notion.js'
+import {
+  fetchAllDates,
+  fetchLatestPages,
+  fetchPageBlocks,
+  findPageByDate,
+  getNotionDatabases,
+} from './api/_utils.js'
 
 // Load environment variables
 dotenv.config({ path: '.env.local' })
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY
-const DATABASE_ID = process.env.NOTION_DATABASE_ID
-const NOTION_VERSION = '2022-06-28'
-
-/**
- * Makes a request to Notion API
- */
-async function notionRequest(endpoint, options = {}) {
-  const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
-    method: options.method || 'POST',
-    headers: {
-      Authorization: `Bearer ${NOTION_API_KEY}`,
-      'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (!response.ok) {
-    throw new Error(`Notion API error: ${response.statusText}`)
-  }
-
-  return response.json()
-}
 
 /**
  * Fetches blocks for a page and converts to devotional format
  */
 const fetchAndConvertPage = async page => {
   // Fetch page content (blocks)
-  const blocksResponse = await notionRequest(`/blocks/${page.id}/children`, {
-    method: 'GET',
-  })
+  const blocks = await fetchPageBlocks(page.id, NOTION_API_KEY)
 
-  return convertNotionPageToDevotional(page, blocksResponse.results)
+  return convertNotionPageToDevotional(page, blocks)
 }
 
 /**
@@ -56,8 +37,20 @@ export function notionApiPlugin() {
   return {
     name: 'notion-api-simple',
     configureServer(server) {
+      let databases = []
+      try {
+        databases = getNotionDatabases()
+      } catch (error) {
+        console.error('❌ Invalid Notion database configuration:', error.message)
+      }
+
       console.log('✅ Notion API plugin loaded (Simple HTTP version)')
-      console.log('📡 Database ID:', DATABASE_ID ? 'Set' : 'MISSING')
+      console.log(
+        '📡 Databases:',
+        databases.length > 0
+          ? databases.map(db => (db.year === null ? 'all years' : db.year)).join(', ')
+          : 'MISSING'
+      )
       console.log('🔑 API Key:', NOTION_API_KEY ? 'Set' : 'MISSING')
 
       server.middlewares.use(async (req, res, next) => {
@@ -74,49 +67,30 @@ export function notionApiPlugin() {
         const limit = parseInt(url.searchParams.get('limit') || '100')
 
         try {
-          // Get devotional by date
+          // Get devotional by date (queries the database for the date's year)
           if (action === 'getByDate' && date) {
-            const response = await notionRequest(`/databases/${DATABASE_ID}/query`, {
-              body: {
-                filter: {
-                  property: 'Date',
-                  date: {
-                    equals: date,
-                  },
-                },
-              },
-            })
+            const page = await findPageByDate(databases, NOTION_API_KEY, date)
 
-            if (response.results.length === 0) {
+            if (!page) {
               res.statusCode = 404
               res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify({ error: 'Devotional not found' }))
               return
             }
 
-            const devotional = await fetchAndConvertPage(response.results[0])
+            const devotional = await fetchAndConvertPage(page)
             res.statusCode = 200
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify(devotional))
             return
           }
 
-          // Get all devotionals
+          // Get all devotionals (across all yearly databases)
           if (action === 'getAll') {
-            const response = await notionRequest(`/databases/${DATABASE_ID}/query`, {
-              body: {
-                sorts: [
-                  {
-                    property: 'Date',
-                    direction: 'descending',
-                  },
-                ],
-                page_size: limit,
-              },
-            })
+            const pages = await fetchLatestPages(databases, NOTION_API_KEY, limit)
 
             const devotionals = []
-            for (const page of response.results) {
+            for (const page of pages) {
               const devotional = await fetchAndConvertPage(page)
               devotionals.push(devotional)
             }
@@ -127,37 +101,9 @@ export function notionApiPlugin() {
             return
           }
 
-          // Get available dates
+          // Get available dates (across all yearly databases)
           if (action === 'getDates') {
-            let allResults = []
-            let hasMore = true
-            let startCursor = undefined
-
-            // Fetch all pages with pagination
-            while (hasMore) {
-              const response = await notionRequest(`/databases/${DATABASE_ID}/query`, {
-                body: {
-                  sorts: [
-                    {
-                      property: 'Date',
-                      direction: 'descending',
-                    },
-                  ],
-                  start_cursor: startCursor,
-                },
-              })
-
-              allResults = allResults.concat(response.results)
-              hasMore = response.has_more
-              startCursor = response.next_cursor
-            }
-
-            const dates = allResults
-              .map(page => {
-                const date = page.properties.Date?.date?.start || page.properties.date?.date?.start
-                return date ? date.split('T')[0] : null
-              })
-              .filter(Boolean)
+            const dates = await fetchAllDates(databases, NOTION_API_KEY)
 
             res.statusCode = 200
             res.setHeader('Content-Type', 'application/json')

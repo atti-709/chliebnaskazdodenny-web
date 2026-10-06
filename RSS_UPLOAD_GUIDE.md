@@ -34,7 +34,7 @@ RSS_CLIENT_SECRET=your_client_secret_here
 
 # Notion API Credentials (already configured)
 NOTION_API_KEY=your_notion_api_key
-NOTION_DATABASE_ID=your_notion_database_id
+NOTION_DATABASE_IDS=2026:your_2026_database_id,2027:your_2027_database_id
 ```
 
 ## Episode Folder Structure
@@ -43,19 +43,24 @@ The script expects your episodes to be organized in the following structure:
 
 ```
 /Users/atti/Library/CloudStorage/GoogleDrive-xzsiros@gmail.com/Shared drives/Chlieb náš každodenný/EPIZÓDY/
-├── 20260101_episode_name/
-│   ├── FINAL/
-│   │   └── 2026_01_01_Episode_Name.mp3  (or .m4a)
-│   └── SRC/
-├── 20260102_another_episode/
-│   ├── FINAL/
-│   │   └── 2026_01_02_Another_Episode.mp3  (or .m4a)
-│   └── SRC/
-└── ...
+├── 2026/
+│   ├── 20260101_episode_name/
+│   │   ├── FINAL/
+│   │   │   └── 2026_01_01_Episode_Name.mp3  (or .m4a)
+│   │   └── SRC/
+│   ├── 20260102_another_episode/
+│   │   ├── FINAL/
+│   │   │   └── 2026_01_02_Another_Episode.mp3  (or .m4a)
+│   │   └── SRC/
+│   └── ...
+└── 2027/
+    └── ...
 ```
 
 **Important:**
+- Episodes are grouped in year folders: `EPIZÓDY/<YYYY>/`. All year folders are scanned unless `--year YYYY` is given; episode folders left directly in `EPIZÓDY/` are ignored (with a warning)
 - Folder name format: `YYYYMMDD_episode_slug`
+- The episode title is read from the Notion database for the episode's year (`NOTION_DATABASE_IDS`)
 - Only episodes with a `FINAL` folder will be processed
 - **Supported audio formats**: `.mp3`, `.m4a` only
 - **WAV files are NOT supported** by RSS.com - see conversion guide below
@@ -189,13 +194,14 @@ node scripts/upload-to-rss.mjs --start-date 2026-01-01 --end-date 2026-01-15
 | `--dry-run`               | Show what would be uploaded without actually uploading |
 | `--start-date YYYY-MM-DD` | Start date for episodes to upload                      |
 | `--end-date YYYY-MM-DD`   | End date for episodes to upload                        |
+| `--year YYYY`             | Only scan `EPIZÓDY/<YYYY>/` (default: all years)       |
 | `--force`                 | Upload even if episode exists (creates duplicate)      |
 
 ## How It Works
 
 ### 1. Episode Scanning
 
-The script scans the episodes directory and looks for folders with the format `YYYYMMDD_episode_name` that contain a `FINAL` subfolder with an audio file.
+The script scans the year folders of the episodes directory (`EPIZÓDY/<YYYY>/`, or only one with `--year`) and looks for folders with the format `YYYYMMDD_episode_name` that contain a `FINAL` subfolder with an audio file.
 
 ### 2. Duplicate Detection
 

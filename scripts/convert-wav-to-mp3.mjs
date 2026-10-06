@@ -7,7 +7,7 @@
  * Podbean only supports MP3 and M4A formats.
  * 
  * Usage:
- *   node scripts/convert-wav-to-mp3.mjs [--all | --date YYYY-MM-DD]
+ *   node scripts/convert-wav-to-mp3.mjs [--all | --date YYYY-MM-DD] [--year YYYY]
  * 
  * Requirements:
  *   - ffmpeg must be installed: brew install ffmpeg
@@ -15,6 +15,7 @@
  * Options:
  *   --all              Convert all WAV files found
  *   --date YYYY-MM-DD  Convert only the episode for this date
+ *   --year YYYY        Only scan EPIZÓDY/<YYYY>/ (default: all year folders)
  *   --dry-run          Show what would be converted without converting
  */
 
@@ -22,11 +23,10 @@ import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { spawn } from 'child_process'
+import { listEpisodeFolders } from './lib/episode-scanner.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-const EPISODES_PATH = '/Users/atti/Library/CloudStorage/GoogleDrive-xzsiros@gmail.com/Shared drives/Chlieb náš každodenný/EPIZÓDY'
 
 /**
  * Checks if ffmpeg is installed
@@ -81,38 +81,26 @@ async function convertToMP3(wavPath, mp3Path) {
 }
 
 /**
- * Extracts date from folder name
- */
-function extractDateFromFolderName(folderName) {
-  const match = folderName.match(/^(\d{4})(\d{2})(\d{2})_/)
-  if (match) {
-    return `${match[1]}-${match[2]}-${match[3]}`
-  }
-  return null
-}
-
-/**
  * Scans for WAV files that need conversion
  */
-async function scanForWAVFiles(targetDate = null) {
+async function scanForWAVFiles(targetDate = null, year = null) {
   console.log('📂 Scanning for WAV files...')
   
-  const entries = await fs.readdir(EPISODES_PATH, { withFileTypes: true })
+  // Episode folders live in EPIZÓDY/<YYYY>/<YYYYMMDD_slug>
+  const folders = await listEpisodeFolders({
+    year: year ?? (targetDate ? targetDate.slice(0, 4) : null),
+  })
   const wavFiles = []
 
-  for (const entry of entries) {
-    if (!entry.isDirectory() || entry.name.startsWith('.')) {
-      continue
-    }
-
-    const date = extractDateFromFolderName(entry.name)
+  for (const folder of folders) {
+    const date = folder.date
     
     // Skip if target date specified and doesn't match
     if (targetDate && date !== targetDate) {
       continue
     }
 
-    const finalPath = path.join(EPISODES_PATH, entry.name, 'FINAL')
+    const finalPath = path.join(folder.path, 'FINAL')
 
     try {
       await fs.access(finalPath)
@@ -141,7 +129,7 @@ async function scanForWAVFiles(targetDate = null) {
 
       wavFiles.push({
         date,
-        folderName: entry.name,
+        folderName: folder.name,
         wavFile,
         wavPath,
         mp3File,
@@ -205,6 +193,7 @@ async function main() {
       all: args.includes('--all'),
       dryRun: args.includes('--dry-run'),
       date: args.includes('--date') ? args[args.indexOf('--date') + 1] : null,
+      year: args.includes('--year') ? args[args.indexOf('--year') + 1] : null,
     }
     
     console.log('🎵 WAV to MP3 Converter\n')
@@ -227,7 +216,7 @@ async function main() {
     }
     
     // Scan for WAV files
-    const wavFiles = await scanForWAVFiles(options.date)
+    const wavFiles = await scanForWAVFiles(options.date, options.year)
     
     if (wavFiles.length === 0) {
       if (options.date) {
