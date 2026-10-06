@@ -54,7 +54,7 @@ The application uses a **secure serverless proxy architecture** to protect sensi
 **Environment Variables**:
 ```bash
 NOTION_API_KEY=secret_xxx...      # Notion Integration Token
-NOTION_DATABASE_ID=abc123...      # Database ID
+NOTION_DATABASE_IDS=2026:abc123...,2027:def456...  # One database per year
 ```
 
 ### 2. **Serverless Proxy** 🛡️
@@ -163,7 +163,7 @@ res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
 ### 8. **Environment Variable Validation** ⚙️
 
 ```javascript
-if (!process.env.NOTION_API_KEY || !process.env.NOTION_DATABASE_ID) {
+if (!NOTION_API_KEY || databases.length === 0) {
   console.error('Missing required environment variables')
   res.status(500).json({ error: 'Server configuration error' })
   return

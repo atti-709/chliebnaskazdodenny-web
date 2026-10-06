@@ -7,7 +7,7 @@ This guide explains how to use the `scripts/upload-to-notion.mjs` script to impo
 1. ✅ Notion integration set up (see `NOTION_SETUP.md`)
 2. ✅ Environment variables configured in `.env.local`:
    - `NOTION_API_KEY`
-   - `NOTION_DATABASE_ID`
+   - `NOTION_DATABASE_IDS` (one database per year, e.g. `2026:<id>,2027:<id>`; each devotional goes to the database of its date's year, or use `--year YYYY`)
 3. ✅ JSON file with parsed devotionals in `scripts/assets/` (e.g., `scripts/assets/devotionals-2026.json`)
 
 ## Basic Usage
@@ -202,7 +202,7 @@ node scripts/upload-to-notion.mjs devotionals-2026.json --start 20
 Make sure `.env.local` exists with:
 ```
 NOTION_API_KEY=your_key_here
-NOTION_DATABASE_ID=your_db_id_here
+NOTION_DATABASE_IDS=2026:your_2026_db_id,2027:your_2027_db_id
 ```
 
 ### Error: "Invalid JSON"

@@ -8,7 +8,7 @@ Before deploying, ensure you have:
 
 1. ✅ A Notion integration set up (see [NOTION_SETUP.md](./NOTION_SETUP.md))
 2. ✅ Your Notion API key (`NOTION_API_KEY`)
-3. ✅ Your Notion database ID (`NOTION_DATABASE_ID`)
+3. ✅ Your Notion database IDs, one per year (`NOTION_DATABASE_IDS`, e.g. `2026:<id>,2027:<id>`)
 4. ✅ A Git repository (GitHub, GitLab, or Bitbucket)
 5. ✅ Code pushed to your repository
 
@@ -57,10 +57,13 @@ This application is configured for both **Netlify** and **Vercel**. Choose the p
 3. Click **"Add a variable"** again and add:
 
    ```
-   Key: NOTION_DATABASE_ID
-   Value: [Your Notion Database ID]
+   Key: NOTION_DATABASE_IDS
+   Value: 2026:[2026 Database ID],2027:[2027 Database ID]
    Scopes: ✅ Production, ✅ Deploy previews, ✅ Branch deploys
    ```
+
+   If an older `NOTION_DATABASE_ID` variable exists, it is ignored once
+   `NOTION_DATABASE_IDS` is set and can be deleted.
 
 ### Step 4: Deploy
 
@@ -106,8 +109,8 @@ This application is configured for both **Netlify** and **Vercel**. Choose the p
 2. Add another:
 
    ```
-   Name: NOTION_DATABASE_ID
-   Value: [Your Notion Database ID]
+   Name: NOTION_DATABASE_IDS
+   Value: 2026:[2026 Database ID],2027:[2027 Database ID]
    Environment: ✅ Production, ✅ Preview, ✅ Development
    ```
 
@@ -168,7 +171,7 @@ npm run build
 
 **Check:**
 - `NOTION_API_KEY` is correct
-- `NOTION_DATABASE_ID` is correct
+- `NOTION_DATABASE_IDS` is correct (`YEAR:ID` pairs separated by commas) and contains the year you are viewing
 - Notion integration has access to the database
 
 **Solution:**
@@ -201,10 +204,20 @@ npm run build
 
 ## Environment Variables Reference
 
-| Variable             | Description              | Required | Example            |
-| -------------------- | ------------------------ | -------- | ------------------ |
-| `NOTION_API_KEY`     | Notion Integration Token | ✅ Yes    | `secret_ABC123...` |
-| `NOTION_DATABASE_ID` | Notion Database ID       | ✅ Yes    | `a1b2c3d4e5f6...`  |
+| Variable              | Description                                                                     | Required | Example                         |
+| --------------------- | ------------------------------------------------------------------------------- | -------- | ------------------------------- |
+| `NOTION_API_KEY`      | Notion Integration Token                                                        | ✅ Yes   | `secret_ABC123...`              |
+| `NOTION_DATABASE_IDS` | Notion database per year, `YEAR:ID` pairs separated by commas                   | ✅ Yes   | `2026:a1b2c3...,2027:d4e5f6...` |
+| `NOTION_DATABASE_ID`  | Legacy: single database for all years (ignored if `NOTION_DATABASE_IDS` is set) | No       | `a1b2c3d4e5f6...`               |
+
+### New Year Rollover
+
+Each year has its own Notion database. Before the new year starts: create the new
+database with the same schema, share it with the integration, append `,YEAR:<id>` to
+`NOTION_DATABASE_IDS` in the Netlify/Vercel environment variables **and** in `.env.local`,
+then redeploy so the functions pick up the new value. Audio goes to
+`EPIZÓDY/<YEAR>/` on the shared drive. Full checklist:
+[NOTION_SETUP.md → Yearly Rollover](./NOTION_SETUP.md#9-yearly-rollover-new-years-database).
 
 ---
 

@@ -14,7 +14,7 @@ You should see:
 
 ```
 NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_DATABASE_IDS=2026:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2027:yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 ```
 
 ### 2. Start the Development Server

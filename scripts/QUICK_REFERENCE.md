@@ -74,7 +74,7 @@ node scripts/inspect-rss-episode.mjs 5
    RSS_API_KEY=your_key
    RSS_PODCAST_ID=your_id
    NOTION_API_KEY=your_key
-   NOTION_DATABASE_ID=your_id
+   NOTION_DATABASE_IDS=2026:your_2026_id,2027:your_2027_id
    ```
 
 2. **Inspect one episode** to see URL format:

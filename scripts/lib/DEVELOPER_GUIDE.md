@@ -125,8 +125,8 @@ validateAllConfig() // Throws if invalid
 // Access configuration
 import { rssConfig, notionConfig, episodesConfig } from './lib/config.js'
 console.log(rssConfig.apiKey)
-console.log(notionConfig.databaseId)
-console.log(episodesConfig.path)
+console.log(notionConfig.getDatabaseIdForDate('2027-01-01')) // database for that year
+console.log(episodesConfig.yearPath(2027)) // .../EPIZÓDY/2027
 ```
 
 ### rss-api.js
